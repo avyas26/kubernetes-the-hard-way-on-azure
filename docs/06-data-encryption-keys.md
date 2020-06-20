@@ -35,12 +35,8 @@ EOF
 Copy the `encryption-config.yaml` encryption config file to each controller instance:
 
 ```shell
-for instance in controller-0 controller-1; do
-  PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-    -n ${instance}-pip --query "ipAddress" -otsv)
-
-  scp -o StrictHostKeyChecking=no encryption-config.yaml kuberoot@${PUBLIC_IP_ADDRESS}:~/
-done
+scp -i id_rsa kubeadmin@<-Public-IP-of-Master-1->:/home/kubeadmin/encryption-config.yaml .
+scp -i id_rsa encryption-config.yaml kubeadmin@<-Public-IP-of-Master-2->:/home/kubeadmin/
 ```
 
 Next: [Bootstrapping the etcd Cluster](07-bootstrapping-etcd.md)
