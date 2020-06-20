@@ -25,12 +25,13 @@ az --version
 The guide assumes you've installed the [Azure CLI 2.0](https://github.com/azure/azure-cli#installation), and will be creating resources in the `eastus2` location, within a resource group named `kubernetes`. To create this resource group, simply run the following command:
 
 ```shell
-az group create -n kubernetes -l eastus2
+az group create -n kubernetes -l southeastasia
 ```
 
 > Use the `az account list-locations` command to view additional locations.
 
 ## Running Commands in Parallel with tmux
+## This is optional.
 
 [tmux](https://github.com/tmux/tmux/wiki) can be used to run commands on multiple compute instances at the same time. Labs in this tutorial may require running the same commands across multiple compute instances, in those cases consider using tmux and splitting a window into multiple panes with `synchronize-panes` enabled to speed up the provisioning process.
 
