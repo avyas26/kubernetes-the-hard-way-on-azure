@@ -1,6 +1,7 @@
 # Installing the Client Tools
 
-In this lab you will install the command line utilities required to complete this tutorial: [openssl] (https://slproweb.com/products/Win32OpenSSL.html) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl).
+In this lab you will install the command line utilities required to complete this tutorial: 
+I will be using [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl).
 
 ## Install OpenSSL
 
@@ -8,45 +9,12 @@ In this lab you will install the command line utilities required to complete thi
 
 Download and install `OpenSSL` from above link.
 
-
 ## Install kubectl
 
 The `kubectl` command line utility is used to interact with the Kubernetes API Server. Download and install `kubectl` from the official release binaries:
 
-### OS X
-
-```shell
-curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl"
-```
-
-```shell
-chmod +x ./kubectl
-```
-
-```shell
-sudo mv ./kubectl /usr/local/bin/kubectl
-```
-
-### Linux
-
-```shell
-curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
-```
-
-```shell
-chmod +x ./kubectl
-```
-
-```shell
-sudo mv ./kubectl /usr/local/bin/kubectl
-```
-
 ### Windows
-Note you need to have chocolately package manager installed first (https://chocolatey.org/)
-
-```shell
-PS C:\Windows\system32>choco install kubernetes-cli
-```
+Download [kubectl] (https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/windows/amd64/kubectl.exe) and run the executable. Other ways to download [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) on windows.
 
 ### Verification
 
