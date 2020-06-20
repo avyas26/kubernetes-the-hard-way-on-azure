@@ -186,8 +186,8 @@ scp -i id_rsa kubeadmin@<-Public-IP-Master-1->:/home/kubeadmin/kubeconfigs/* kub
 Copy the appropriate `kubelet` and `kube-proxy` kubeconfig files to respective worker nodes:
 
 ```shell
-scp -i id_rsa kubeconfigs/worker-1* kubeadmin@<-Public-IP-Worker-1->:/home/kubeadmin/
-scp -i id_rsa kubeconfigs/worker-2* kubeadmin@<-Public-IP-Worker-2->:/home/kubeadmin/
+scp -i id_rsa kubeconfigs/worker-1* kubeconfigs/kube-proxy* kubeadmin@<-Public-IP-Worker-1->:/home/kubeadmin/
+scp -i id_rsa kubeconfigs/worker-2* kubeconfigs/kube-proxy* kubeadmin@<-Public-IP-Worker-2->:/home/kubeadmin/
 ```
 
 Since we have generated the kubeconfigs on master-1 node we will copy `kube-controller-manager` `admin` and `kube-scheduler` kubeconfig files to master-2 node:
