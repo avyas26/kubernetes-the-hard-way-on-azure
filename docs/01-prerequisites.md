@@ -31,7 +31,6 @@ az group create -n kubernetes -l southeastasia
 > Use the `az account list-locations` command to view additional locations.
 
 ## Running Commands in Parallel with tmux
-## This is optional.
 
 [tmux](https://github.com/tmux/tmux/wiki) can be used to run commands on multiple compute instances at the same time. Labs in this tutorial may require running the same commands across multiple compute instances, in those cases consider using tmux and splitting a window into multiple panes with `synchronize-panes` enabled to speed up the provisioning process.
 
