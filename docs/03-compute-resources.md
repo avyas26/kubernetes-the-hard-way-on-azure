@@ -17,10 +17,7 @@ In this section a dedicated [Virtual Network](https://docs.microsoft.com/azure/v
 Create the `kubernetes-vnet` custom VNet network with a subnet `kubernetes` provisioned with an IP address range large enough to assign a private IP address to each node in the Kubernetes cluster.:
 
 ```shell
-az network vnet create -g kubernetes \
-  -n kubernetes-vnet \
-  --address-prefix 10.240.0.0/24 \
-  --subnet-name kubernetes-subnet
+az network vnet create -g kubernetes -n kubernetes-vnet --address-prefix 10.240.0.0/24 --subnet-name kubernetes-subnet
 ```
 
 > The `10.240.0.0/24` IP address range can host up to 254 compute instances.
@@ -34,40 +31,17 @@ az network nsg create -g kubernetes -n kubernetes-nsg
 ```
 
 ```shell
-az network vnet subnet update -g kubernetes \
-  -n kubernetes-subnet \
-  --vnet-name kubernetes-vnet \
-  --network-security-group kubernetes-nsg
+az network vnet subnet update -g kubernetes -n kubernetes-subnet --vnet-name kubernetes-vnet --network-security-group kubernetes-nsg
 ```
 
 Create a firewall rule that allows external SSH and HTTPS:
 
 ```shell
-az network nsg rule create -g kubernetes \
-  -n kubernetes-allow-ssh \
-  --access allow \
-  --destination-address-prefix '*' \
-  --destination-port-range 22 \
-  --direction inbound \
-  --nsg-name kubernetes-nsg \
-  --protocol tcp \
-  --source-address-prefix '*' \
-  --source-port-range '*' \
-  --priority 1000
+az network nsg rule create -g kubernetes -n kubernetes-allow-ssh --access allow --destination-address-prefix "*" --destination-port-range 22 --direction inbound --nsg-name kubernetes-nsg --protocol tcp --source-address-prefix "*" --source-port-range "*" --priority 1000
 ```
 
 ```shell
-az network nsg rule create -g kubernetes \
-  -n kubernetes-allow-api-server \
-  --access allow \
-  --destination-address-prefix '*' \
-  --destination-port-range 6443 \
-  --direction inbound \
-  --nsg-name kubernetes-nsg \
-  --protocol tcp \
-  --source-address-prefix '*' \
-  --source-port-range '*' \
-  --priority 1001
+az network nsg rule create -g kubernetes -n kubernetes-allow-api-server --access allow --destination-address-prefix "*" --destination-port-range 6443 --direction inbound --nsg-name kubernetes-nsg --protocol tcp --source-address-prefix "*" --source-port-range "*" --priority 1001
 ```
 
 > An [external load balancer](https://docs.microsoft.com/azure/load-balancer/load-balancer-overview) will be used to expose the Kubernetes API Servers to remote clients.
@@ -75,8 +49,7 @@ az network nsg rule create -g kubernetes \
 List the firewall rules in the `kubernetes-vnet` VNet network:
 
 ```shell
-az network nsg rule list -g kubernetes --nsg-name kubernetes-nsg --query "[].{Name:name, \
-  Direction:direction, Priority:priority, Port:destinationPortRange}" -o table
+az network nsg rule list -g kubernetes --nsg-name kubernetes-nsg --query "[].{Name:name, Direction:direction, Priority:priority, Port:destinationPortRange}" -o table
 ```
 
 > output
@@ -93,83 +66,67 @@ kubernetes-allow-api-server  Inbound            1001    6443
 Allocate a static IP address that will be attached to the external load balancer fronting the Kubernetes API Servers:
 
 ```shell
-az network lb create -g kubernetes \
-  -n kubernetes-lb \
-  --backend-pool-name kubernetes-lb-pool \
-  --public-ip-address kubernetes-pip \
-  --public-ip-address-allocation static
+az network lb create -g kubernetes -n kubernetes-lb --backend-pool-name kubernetes-lb-pool --public-ip-address kubernetes-pip --public-ip-address-allocation static
 ```
 
 Verify the `kubernetes-pip` static IP address was created correctly in the `kubernetes` Resource Group and chosen region:
 
 ```shell
-az network public-ip list --query="[?name=='kubernetes-pip'].{ResourceGroup:resourceGroup, \
-  Region:location,Allocation:publicIpAllocationMethod,IP:ipAddress}" -o table
+az network public-ip list --query="[?name=='kubernetes-pip'].{ResourceGroup:resourceGroup, Region:location, Allocation:publicIpAllocationMethod, IP:ipAddress}" -o table
 ```
 
 > output
 
 ```shell
-ResourceGroup    Region    Allocation    IP
----------------  --------  ------------  --------------
-kubernetes       eastus2   Static        XX.XXX.XXX.XXX
+ResourceGroup    Region         Allocation    IP
+---------------  -------------  ------------  -------------
+kubernetes       southeastasia  Static        xxx.xx.xxx.xx
 ```
 
 ## Virtual Machines
 
-The compute instances in this lab will be provisioned using [Ubuntu Server](https://www.ubuntu.com/server) 18.04, which has good support for the [cri-containerd container runtime](https://github.com/kubernetes-incubator/cri-containerd). Each compute instance will be provisioned with a fixed private IP address to simplify the Kubernetes bootstrapping process.
+The compute instances in this lab will be provisioned using [Ubuntu Server](https://www.ubuntu.com/server) 18.04. Each compute instance will be provisioned with a fixed private IP address to simplify the Kubernetes bootstrapping process.
 
 To select latest stable Ubuntu Server release run following command and replace UBUNTULTS variable below with latest row in the table.
 
 ```shell
-az vm image list --location eastus2 --publisher Canonical --offer UbuntuServer --sku 18.04-LTS --all -o table
+az vm image list --location southeastasia --publisher Canonical --offer UbuntuServer --sku 18.04-LTS --all -o table
 ```
 
 ```shell
-UBUNTULTS="Canonical:UbuntuServer:18.04-LTS:18.04.202002180"
+set UBUNTULTS="Canonical:UbuntuServer:18.04-LTS:18.04.202006101"
+
+echo %UBUNTULTS%
+"Canonical:UbuntuServer:18.04-LTS:18.04.202006101"
+
 ```
 
 ### Kubernetes Controllers
 
-Create two compute instances which will host the Kubernetes control plane in `controller-as` [Availability Set](https://docs.microsoft.com/azure/virtual-machines/linux/tutorial-availability-sets#availability-set-overview):
+Create two compute instances which will host the Kubernetes control plane in `master-as` [Availability Set](https://docs.microsoft.com/azure/virtual-machines/linux/tutorial-availability-sets#availability-set-overview):
 
 ```shell
-az vm availability-set create -g kubernetes -n controller-as
+az vm availability-set create -g kubernetes -n master-as
 ```
+While creating virtual machines you can pass your own set of SSH keys which will then be used to login to servers.
+Azure currently supports SSH protocol 2 (SSH-2) RSA public-private key pairs with a minimum length of 2048 bits. Other key formats such as ED25519 and ECDSA are not supported. 
 
 ```shell
-for i in 0 1; do
-    echo "[Controller ${i}] Creating public IP..."
-    az network public-ip create -n controller-${i}-pip -g kubernetes > /dev/null
 
-    echo "[Controller ${i}] Creating NIC..."
-    az network nic create -g kubernetes \
-        -n controller-${i}-nic \
-        --private-ip-address 10.240.0.1${i} \
-        --public-ip-address controller-${i}-pip \
-        --vnet kubernetes-vnet \
-        --subnet kubernetes-subnet \
-        --ip-forwarding \
-        --lb-name kubernetes-lb \
-        --lb-address-pools kubernetes-lb-pool > /dev/null
+az network public-ip create -n master-1-pip -g kubernetes
+az network public-ip create -n master-2-pip -g kubernetes
 
-    echo "[Controller ${i}] Creating VM..."
-    az vm create -g kubernetes \
-        -n controller-${i} \
-        --image ${UBUNTULTS} \
-        --nics controller-${i}-nic \
-        --availability-set controller-as \
-        --nsg '' \
-        --admin-username 'kuberoot' \
-        --generate-ssh-keys > /dev/null
-done
+az network nic create -g kubernetes -n master-1-nic --private-ip-address 10.240.0.11 --public-ip-address master-1-pip --vnet kubernetes-vnet --subnet kubernetes-subnet --ip-forwarding --lb-name kubernetes-lb --lb-address-pools kubernetes-lb-pool
+
+az network nic create -g kubernetes -n master-2-nic --private-ip-address 10.240.0.12 --public-ip-address master-2-pip --vnet kubernetes-vnet --subnet kubernetes-subnet --ip-forwarding --lb-name kubernetes-lb --lb-address-pools kubernetes-lb-pool
+
+az vm create -g kubernetes -n master-1 --image %UBUNTULTS% --nics master-1-nic --availability-set master-as --admin-username "kubeadmin" --ssh-key-values <-Full-Path-To->\id_rsa.pub
+
+az vm create -g kubernetes -n master-2 --image %UBUNTULTS% --nics master-2-nic --availability-set master-as --admin-username "kubeadmin" --ssh-key-values <-Full-Path-To->\id_rsa.pub
+
 ```
 
 ### Kubernetes Workers
-
-Each worker instance requires a pod subnet allocation from the Kubernetes cluster CIDR range. The pod subnet allocation will be used to configure container networking in a later exercise. The `pod-cidr` instance metadata will be used to expose pod subnet allocations to compute instances at runtime.
-
-> The Kubernetes cluster CIDR range is defined by the Controller Manager's `--cluster-cidr` flag. In this tutorial the cluster CIDR range will be set to `10.240.0.0/16`, which supports 254 subnets.
 
 Create two compute instances which will host the Kubernetes worker nodes in `worker-as` Availability Set:
 
@@ -178,30 +135,17 @@ az vm availability-set create -g kubernetes -n worker-as
 ```
 
 ```shell
-for i in 0 1; do
-    echo "[Worker ${i}] Creating public IP..."
-    az network public-ip create -n worker-${i}-pip -g kubernetes > /dev/null
+az network public-ip create -n worker-1-pip -g kubernetes
+az network public-ip create -n worker-2-pip -g kubernetes
 
-    echo "[Worker ${i}] Creating NIC..."
-    az network nic create -g kubernetes \
-        -n worker-${i}-nic \
-        --private-ip-address 10.240.0.2${i} \
-        --public-ip-address worker-${i}-pip \
-        --vnet kubernetes-vnet \
-        --subnet kubernetes-subnet \
-        --ip-forwarding > /dev/null
+az network nic create -g kubernetes -n worker-1-nic --private-ip-address 10.240.0.21 --public-ip-address worker-1-pip --vnet kubernetes-vnet --subnet kubernetes-subnet --ip-forwarding
 
-    echo "[Worker ${i}] Creating VM..."
-    az vm create -g kubernetes \
-        -n worker-${i} \
-        --image ${UBUNTULTS} \
-        --nics worker-${i}-nic \
-        --tags pod-cidr=10.200.${i}.0/24 \
-        --availability-set worker-as \
-        --nsg '' \
-        --generate-ssh-keys \
-        --admin-username 'kuberoot' > /dev/null
-done
+az network nic create -g kubernetes -n worker-2-nic --private-ip-address 10.240.0.22 --public-ip-address worker-2-pip --vnet kubernetes-vnet --subnet kubernetes-subnet --ip-forwarding
+
+az vm create -g kubernetes -n worker-1 --image %UBUNTULTS% --nics worker-1-nic --availability-set worker-as --admin-username "kubeadmin" --ssh-key-values <-Full-Path-To->\id_rsa.pub
+
+az vm create -g kubernetes -n worker-2 --image %UBUNTULTS% --nics worker-2-nic --availability-set worker-as --admin-username "kubeadmin" --ssh-key-values <-Full-Path-To->\id_rsa.pub
+
 ```
 
 ### Verification
@@ -215,12 +159,39 @@ az vm list -d -g kubernetes -o table
 > output
 
 ```shell
-Name          ResourceGroup    PowerState    PublicIps       Location
-------------  ---------------  ------------  --------------  ----------
-controller-0  kubernetes       VM running    XX.XXX.XXX.XXX  eastus2
-controller-1  kubernetes       VM running    XX.XXX.XXX.XXX  eastus2
-worker-0      kubernetes       VM running    XX.XXX.XXX.XXX  eastus2
-worker-1      kubernetes       VM running    XX.XXX.XXX.XXX  eastus2
+Name      ResourceGroup    PowerState    PublicIps      Fqdns    Location       Zones
+--------  ---------------  ------------  -------------  -------  -------------  -------
+master-1  kubernetes       VM running    xx.xx.xx.xxx            southeastasia
+master-2  kubernetes       VM running    xx.xx.xxx.xxx           southeastasia
+worker-1  kubernetes       VM running    xx.xxx.xx.xx            southeastasia
+worker-2  kubernetes       VM running    xx.xx.x.xxx             southeastasia
+```
+SSH to the instances using private key:
+
+```shell
+cd <-Full-Path-To-Private-Key->
+ssh -i id_rsa kubeadmin@<-Public-IP-Listed-In-The-Table-Above->
+
+```
+> output
+
+```shell
+
+for ip in <-Public-IP-Master-1-> <-Public-IP-Master-2-> <-Public-IP-Worker-1-> <-Public-IP-Worker-2->
+> do
+> ssh -i id_rsa kubeadmin@$ip "hostname -s"
+> done
+master-1
+Warning: Permanently added '13.76.128.181' (RSA) to the list of known hosts.
+/usr/bin/xauth:  file /home/kubeadmin/.Xauthority does not exist
+master-2
+Warning: Permanently added '52.230.67.62' (RSA) to the list of known hosts.
+/usr/bin/xauth:  file /home/kubeadmin/.Xauthority does not exist
+worker-1
+Warning: Permanently added '13.76.7.218' (RSA) to the list of known hosts.
+/usr/bin/xauth:  file /home/kubeadmin/.Xauthority does not exist
+worker-2
+
 ```
 
 Next: [Provisioning a CA and Generating TLS Certificates](04-certificate-authority.md)
