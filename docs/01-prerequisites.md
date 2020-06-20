@@ -14,7 +14,7 @@ This tutorial leverages the [Microsoft Azure](https://azure.microsoft.com) to st
 
 Follow the Microsoft Azure CLI 2.0 [documentation](https://github.com/azure/azure-cli#installation) to install and configure the `az` command line utility.
 
-Follow the [documentation](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-windows?view=azure-cli-latest&tabs=azure-cli) to Install Azure CLI on Windows
+In this lab I will be using Windows CMD to run the Azure CLI. Follow the [documentation](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-windows?view=azure-cli-latest&tabs=azure-cli) to Install Azure CLI on Windows
 
 Verify the Microsoft Azure CLI 2.0 version is 2.1.0 or higher:
 
