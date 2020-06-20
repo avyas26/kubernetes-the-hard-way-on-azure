@@ -24,7 +24,7 @@ az --version
 
 ### Create a default Resource Group in a location
 
-The guide assumes you've installed the [Azure CLI 2.0](https://github.com/azure/azure-cli#installation), and will be creating resources in the `eastus2` location, within a resource group named `kubernetes`. To create this resource group, simply run the following command:
+The guide assumes you've installed the [Azure CLI 2.0](https://github.com/azure/azure-cli#installation), and will be creating resources in the `southeastasia` location, within a resource group named `kubernetes`. To create this resource group, simply run the following command:
 
 ```shell
 az group create -n kubernetes -l southeastasia
