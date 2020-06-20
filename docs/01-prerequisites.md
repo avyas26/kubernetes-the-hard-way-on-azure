@@ -32,4 +32,4 @@ az group create -n kubernetes -l southeastasia
 
 > Use the `az account list-locations` command to view additional locations.
 
-Next: [Installing the Client Tools](02-client-tools.md)
+Next: [Provisioning Compute Resources](02-compute-resources.md)
