@@ -23,19 +23,24 @@ When generating kubeconfig files for Kubelets the client certificate matching th
 Generate a kubeconfig file for each worker node:
 
 ```shell
+
 ssh -i id_rsa kubeadmin@<Public-IP-of-Master-1->
 KUBERNETES_PUBLIC_ADDRESS=<-Public-IP-Generated-from-above-command->
+certs=/home/kubeadmin/certs
+
+mkdir kubeconfigs
+cd kubeconfigs
 
 for instance in worker-1 worker-2; do
   kubectl config set-cluster kubernetes-the-hard-way \
-    --certificate-authority=ca.crt \
+    --certificate-authority=${certs}/ca.crt \
     --embed-certs=true \
     --server=https://${KUBERNETES_PUBLIC_ADDRESS}:6443 \
     --kubeconfig=${instance}.kubeconfig
 
   kubectl config set-credentials system:node:${instance} \
-    --client-certificate=${instance}.crt \
-    --client-key=${instance}key \
+    --client-certificate=${certs}/${instance}.crt \
+    --client-key=${certs}/${instance}.key \
     --embed-certs=true \
     --kubeconfig=${instance}.kubeconfig
 
@@ -47,13 +52,8 @@ for instance in worker-1 worker-2; do
   kubectl config use-context default --kubeconfig=${instance}.kubeconfig
 done
 
-```
-
-Results:
-
-```shell
-worker-0.kubeconfig
-worker-1.kubeconfig
+ls worker*
+worker-1.kubeconfig  worker-2.kubeconfig
 ```
 
 ### The kube-proxy Kubernetes Configuration File
@@ -61,35 +61,28 @@ worker-1.kubeconfig
 Generate a kubeconfig file for the `kube-proxy` service:
 
 ```shell
+{
 kubectl config set-cluster kubernetes-the-hard-way \
-  --certificate-authority=ca.pem \
+  --certificate-authority=${certs}/ca.crt \
   --embed-certs=true \
   --server=https://${KUBERNETES_PUBLIC_ADDRESS}:6443 \
   --kubeconfig=kube-proxy.kubeconfig
-```
 
-```shell
 kubectl config set-credentials kube-proxy \
-  --client-certificate=kube-proxy.pem \
-  --client-key=kube-proxy-key.pem \
+  --client-certificate=${certs}/kube-proxy.crt \
+  --client-key=${certs}/kube-proxy.key \
   --embed-certs=true \
   --kubeconfig=kube-proxy.kubeconfig
-```
 
-```shell
 kubectl config set-context default \
   --cluster=kubernetes-the-hard-way \
   --user=kube-proxy \
   --kubeconfig=kube-proxy.kubeconfig
-```
 
-```shell
 kubectl config use-context default --kubeconfig=kube-proxy.kubeconfig
-```
+}
 
-Results:
-
-```shell
+ls kube-proxy*
 kube-proxy.kubeconfig
 ```
 
@@ -99,30 +92,27 @@ Generate a kubeconfig file for the `kube-controller-manager` service:
 
 ```shell
 {
-  kubectl config set-cluster kubernetes-the-hard-way \
-    --certificate-authority=ca.pem \
+kubectl config set-cluster kubernetes-the-hard-way \
+    --certificate-authority=${certs}/ca.crt \
     --embed-certs=true \
     --server=https://127.0.0.1:6443 \
     --kubeconfig=kube-controller-manager.kubeconfig
 
-  kubectl config set-credentials system:kube-controller-manager \
-    --client-certificate=kube-controller-manager.pem \
-    --client-key=kube-controller-manager-key.pem \
+kubectl config set-credentials system:kube-controller-manager \
+    --client-certificate=${certs}/kube-controller-manager.crt \
+    --client-key=${certs}/kube-controller-manager.key \
     --embed-certs=true \
     --kubeconfig=kube-controller-manager.kubeconfig
 
-  kubectl config set-context default \
+kubectl config set-context default \
     --cluster=kubernetes-the-hard-way \
     --user=system:kube-controller-manager \
     --kubeconfig=kube-controller-manager.kubeconfig
 
-  kubectl config use-context default --kubeconfig=kube-controller-manager.kubeconfig
+kubectl config use-context default --kubeconfig=kube-controller-manager.kubeconfig
 }
-```
 
-Results:
-
-```shell
+ls kube-contro*
 kube-controller-manager.kubeconfig
 ```
 
@@ -133,14 +123,14 @@ Generate a kubeconfig file for the `kube-scheduler` service:
 ```shell
 {
   kubectl config set-cluster kubernetes-the-hard-way \
-    --certificate-authority=ca.pem \
+    --certificate-authority=${certs}/ca.crt \
     --embed-certs=true \
     --server=https://127.0.0.1:6443 \
     --kubeconfig=kube-scheduler.kubeconfig
 
   kubectl config set-credentials system:kube-scheduler \
-    --client-certificate=kube-scheduler.pem \
-    --client-key=kube-scheduler-key.pem \
+    --client-certificate=${certs}/kube-scheduler.crt \
+    --client-key=${certs}/kube-scheduler.key \
     --embed-certs=true \
     --kubeconfig=kube-scheduler.kubeconfig
 
@@ -151,11 +141,8 @@ Generate a kubeconfig file for the `kube-scheduler` service:
 
   kubectl config use-context default --kubeconfig=kube-scheduler.kubeconfig
 }
-```
 
-Results:
-
-```shell
+ls kube-sc*
 kube-scheduler.kubeconfig
 ```
 
@@ -166,14 +153,14 @@ Generate a kubeconfig file for the `admin` user:
 ```shell
 {
   kubectl config set-cluster kubernetes-the-hard-way \
-    --certificate-authority=ca.pem \
+    --certificate-authority=${certs}/ca.crt \
     --embed-certs=true \
     --server=https://127.0.0.1:6443 \
     --kubeconfig=admin.kubeconfig
 
   kubectl config set-credentials admin \
-    --client-certificate=admin.pem \
-    --client-key=admin-key.pem \
+    --client-certificate=${certs}/admin.crt \
+    --client-key=${certs}/admin.key \
     --embed-certs=true \
     --kubeconfig=admin.kubeconfig
 
@@ -184,36 +171,29 @@ Generate a kubeconfig file for the `admin` user:
 
   kubectl config use-context default --kubeconfig=admin.kubeconfig
 }
-```
 
-Results:
-
-```shell
+ls admin*
 admin.kubeconfig
 ```
-
 ## Distribute the Kubernetes Configuration Files
 
-Copy the appropriate `kubelet` and `kube-proxy` kubeconfig files to each worker instance:
+There is no connectivity established between VMs yet so we will copy the kubeconfigs directory to desktop and copy them to required VMs.
 
 ```shell
-for instance in worker-0 worker-1; do
-  PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-    -n ${instance}-pip --query "ipAddress" -otsv)
-
-  scp ${instance}.kubeconfig kube-proxy.kubeconfig kuberoot@${PUBLIC_IP_ADDRESS}:~/
-done
+scp -i id_rsa kubeadmin@<-Public-IP-Master-1->:/home/kubeadmin/kubeconfigs/* kubeconfigs/
 ```
 
-Copy the appropriate `kube-controller-manager` and `kube-scheduler` kubeconfig files to each controller instance:
+Copy the appropriate `kubelet` and `kube-proxy` kubeconfig files to respective worker nodes:
 
 ```shell
-for instance in controller-0 controller-1; do
-  PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-    -n ${instance}-pip --query "ipAddress" -otsv)
+scp -i id_rsa kubeconfigs/worker-1* kubeadmin@<-Public-IP-Worker-1->:/home/kubeadmin/
+scp -i id_rsa kubeconfigs/worker-2* kubeadmin@<-Public-IP-Worker-2->:/home/kubeadmin/
+```
 
-  scp admin.kubeconfig kube-controller-manager.kubeconfig kube-scheduler.kubeconfig kuberoot@${PUBLIC_IP_ADDRESS}:~/
-done
+Since we have generated the kubeconfigs on master-1 node we will copy `kube-controller-manager` `admin` and `kube-scheduler` kubeconfig files to master-2 node:
+
+```shell
+scp -i id_rsa kubeconfigs/kube-* kubeconfigs/admin* kubeadmin@<-Public-IP-Master-2->:/home/kubeadmin/
 ```
 
 Next: [Generating the Data Encryption Config and Key](06-data-encryption-keys.md)
