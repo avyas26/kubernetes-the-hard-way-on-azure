@@ -13,8 +13,7 @@ Each kubeconfig requires a Kubernetes API Server to connect to. To support high 
 Retrieve the `kubernetes-the-hard-way` static IP address:
 
 ```shell
-KUBERNETES_PUBLIC_ADDRESS=$(az network public-ip show -g kubernetes \
-  -n kubernetes-pip --query "ipAddress" -otsv)
+az network public-ip show -g kubernetes -n kubernetes-pip --query "ipAddress" -otsv
 ```
 
 ### The kubelet Kubernetes Configuration File
@@ -24,16 +23,19 @@ When generating kubeconfig files for Kubelets the client certificate matching th
 Generate a kubeconfig file for each worker node:
 
 ```shell
-for instance in worker-0 worker-1; do
+ssh -i id_rsa kubeadmin@<Public-IP-of-Master-1->
+KUBERNETES_PUBLIC_ADDRESS=<-Public-IP-Generated-from-above-command->
+
+for instance in worker-1 worker-2; do
   kubectl config set-cluster kubernetes-the-hard-way \
-    --certificate-authority=ca.pem \
+    --certificate-authority=ca.crt \
     --embed-certs=true \
     --server=https://${KUBERNETES_PUBLIC_ADDRESS}:6443 \
     --kubeconfig=${instance}.kubeconfig
 
   kubectl config set-credentials system:node:${instance} \
-    --client-certificate=${instance}.pem \
-    --client-key=${instance}-key.pem \
+    --client-certificate=${instance}.crt \
+    --client-key=${instance}key \
     --embed-certs=true \
     --kubeconfig=${instance}.kubeconfig
 
@@ -44,6 +46,7 @@ for instance in worker-0 worker-1; do
 
   kubectl config use-context default --kubeconfig=${instance}.kubeconfig
 done
+
 ```
 
 Results:
