@@ -1,84 +1,13 @@
 # Installing the Client Tools
 
-In this lab you will install the command line utilities required to complete this tutorial: [cfssl](https://github.com/cloudflare/cfssl), [cfssljson](https://github.com/cloudflare/cfssl), and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl).
+In this lab you will install the command line utilities required to complete this tutorial: [openssl] (https://slproweb.com/products/Win32OpenSSL.html) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl).
 
-## Install CFSSL
+## Install OpenSSL
 
-The `cfssl` and `cfssljson` command line utilities will be used to provision a [PKI Infrastructure](https://en.wikipedia.org/wiki/Public_key_infrastructure) and generate TLS certificates.
+`OpenSSL` command line utilities will be used to provision a [PKI Infrastructure](https://en.wikipedia.org/wiki/Public_key_infrastructure) and generate TLS certificates.
 
-Download and install `cfssl` and `cfssljson` from the [cfssl repository](https://github.com/cloudflare/cfssl/releases):
+Download and install `OpenSSL` from above link.
 
-### OS X
-
-OS X users may experience problems using the pre-built binaries in which case [Homebrew](https://brew.sh) might be a better option:
-
-```
-brew install cfssl
-```
-
-### Linux
-
-```shell
-wget -q --show-progress --https-only --timestamping \
-  https://pkg.cfssl.org/R1.2/cfssl_linux-amd64 \
-  https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64
-```
-
-```shell
-chmod +x cfssl_linux-amd64 cfssljson_linux-amd64
-```
-
-```shell
-sudo mv cfssl_linux-amd64 /usr/local/bin/cfssl
-```
-
-```shell
-sudo mv cfssljson_linux-amd64 /usr/local/bin/cfssljson
-```
-
-### Windows
-Download your version of cfss_windows-386.exe or cfssl_windows-amd64.exe
-For windows on 32 bit use powershell, using administrative rights
-```shell
-PS C:\Windows\system32>Invoke-WebRequest -Uri https://pkg.cfssl.org/R1.2/cfssl_windows-386.exe -OutFile cfssl.exe
-PS C:\Windows\system32>Invoke-WebRequest -Uri https://pkg.cfssl.org/R1.2/cfssljson_windows-386.exe -OutFile cfssljson.exe
-```
-For windows on 64 bit use powershell, using administrative rights
-```shell
-PS C:\Windows\system32>Invoke-WebRequest -Uri https://pkg.cfssl.org/R1.2/cfssl_windows-amd64.exe -OutFile cfssl.exe
-PS C:\Windows\system32>Invoke-WebRequest -Uri https://pkg.cfssl.org/R1.2/cfssljson_windows-amd64.exe -OutFile cfssljson.exe
-```
-
-
-### Verification
-
-Verify `cfssl` version 1.4.1 or higher is installed:
-
-```shell
-cfssl version
-```
-
-If this step fails with a runtime error, try installing cfssl following instructions on [CloudFlare's repository](https://github.com/cloudflare/cfssl#installation)
-
-> output
-
-```shell
-Version: 1.4.1
-Revision: dev
-Runtime: go1.13.4
-```
-
-```shell
-cfssljson -version
-```
-
-> output
-
-```shell
-Version: 1.4.1
-Revision: dev
-Runtime: go1.13.4
-```
 
 ## Install kubectl
 
