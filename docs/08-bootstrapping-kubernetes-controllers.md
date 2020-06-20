@@ -65,48 +65,46 @@ INTERNAL_IP=$(ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 Create the `kube-apiserver.service` systemd unit file:
 
 ```shell
-cat <<EOF | sudo tee /etc/systemd/system/kube-apiserver.service
 [Unit]
 Description=Kubernetes API Server
 Documentation=https://github.com/kubernetes/kubernetes
 
 [Service]
-ExecStart=/usr/local/bin/kube-apiserver \\
-  --advertise-address=${INTERNAL_IP} \\
-  --allow-privileged=true \\
-  --apiserver-count=2 \\
-  --audit-log-maxage=30 \\
-  --audit-log-maxbackup=3 \\
-  --audit-log-maxsize=100 \\
-  --audit-log-path=/var/log/audit.log \\
-  --authorization-mode=Node,RBAC \\
-  --bind-address=0.0.0.0 \\
-  --client-ca-file=/var/lib/kubernetes/ca.pem \\
-  --enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,TaintNodesByCondition,Priority,DefaultTolerationSeconds,DefaultStorageClass,PersistentVolumeClaimResize,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota \\
-  --enable-swagger-ui=true \\
-  --etcd-cafile=/var/lib/kubernetes/ca.pem \\
-  --etcd-certfile=/var/lib/kubernetes/kubernetes.pem \\
-  --etcd-keyfile=/var/lib/kubernetes/kubernetes-key.pem \\
-  --etcd-servers=https://10.240.0.10:2379,https://10.240.0.11:2379 \\
-  --event-ttl=1h \\
-  --experimental-encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml \\
-  --kubelet-certificate-authority=/var/lib/kubernetes/ca.pem \\
-  --kubelet-client-certificate=/var/lib/kubernetes/kubernetes.pem \\
-  --kubelet-client-key=/var/lib/kubernetes/kubernetes-key.pem \\
-  --kubelet-https=true \\
-  --runtime-config=api/all=true \\
-  --service-account-key-file=/var/lib/kubernetes/service-account.pem \\
-  --service-cluster-ip-range=10.32.0.0/24 \\
-  --service-node-port-range=30000-32767 \\
-  --tls-cert-file=/var/lib/kubernetes/kubernetes.pem \\
-  --tls-private-key-file=/var/lib/kubernetes/kubernetes-key.pem \\
+ExecStart=/usr/local/bin/kube-apiserver \
+  --advertise-address=10.240.0.11 \
+  --allow-privileged=true \
+  --apiserver-count=2 \
+  --audit-log-maxage=30 \
+  --audit-log-maxbackup=3 \
+  --audit-log-maxsize=100 \
+  --audit-log-path=/var/log/audit.log \
+  --authorization-mode=Node,RBAC \
+  --bind-address=0.0.0.0 \
+  --client-ca-file=/var/lib/kubernetes/ca.crt \
+  --enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,TaintNodesByCondition,Priority,DefaultTolerationSeconds,DefaultStorage
+  --enable-swagger-ui=true \
+  --etcd-cafile=/var/lib/kubernetes/ca.crt \
+  --etcd-certfile=/var/lib/kubernetes/kube-apiserver.crt \
+  --etcd-keyfile=/var/lib/kubernetes/kube-apiserver.key \
+  --etcd-servers=https://10.240.0.11:2379,https://10.240.0.12:2379 \
+  --event-ttl=1h \
+  --experimental-encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml \
+  --kubelet-certificate-authority=/var/lib/kubernetes/ca.crt \
+  --kubelet-client-certificate=/var/lib/kubernetes/kube-apiserver.crt \
+  --kubelet-client-key=/var/lib/kubernetes/kube-apiserver.crt \
+  --kubelet-https=true \
+  --runtime-config=api/all=true \
+  --service-account-key-file=/var/lib/kubernetes/service-account.crt \
+  --service-cluster-ip-range=10.32.0.0/24 \
+  --service-node-port-range=30000-32767 \
+  --tls-cert-file=/var/lib/kubernetes/kube-apiserver.crt \
+  --tls-private-key-file=/var/lib/kubernetes/kube-apiserver.key \
   --v=2
 Restart=on-failure
 RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
-EOF
 ```
 
 ### Configure the Kubernetes Controller Manager
@@ -224,11 +222,9 @@ In this section you will configure RBAC permissions to allow the Kubernetes API 
 > This tutorial sets the Kubelet `--authorization-mode` flag to `Webhook`. Webhook mode uses the [SubjectAccessReview](https://kubernetes.io/docs/admin/authorization/#checking-api-access) API to determine authorization.
 
 ```shell
-CONTROLLER="controller-0"
-PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-  -n ${CONTROLLER}-pip --query "ipAddress" -otsv)
+az network public-ip show -g kubernetes -n master-1-pip --query "ipAddress" -otsv
 
-ssh kuberoot@${PUBLIC_IP_ADDRESS}
+ssh -i id_rsa kubeadmin@<-Output-of-above-command->
 ```
 
 Create the `system:kube-apiserver-to-kubelet` [ClusterRole](https://kubernetes.io/docs/admin/authorization/rbac/#role-and-clusterrole) with permissions to access the Kubelet API and perform most common tasks associated with managing pods:
@@ -257,9 +253,9 @@ rules:
 EOF
 ```
 
-The Kubernetes API Server authenticates to the Kubelet as the `kubernetes` user using the client certificate as defined by the `--kubelet-client-certificate` flag.
+The Kubernetes API Server authenticates to the Kubelet as the `kube-apiserver` user using the client certificate as defined by the `--kubelet-client-certificate` flag.
 
-Bind the `system:kube-apiserver-to-kubelet` ClusterRole to the `kubernetes` user:
+Bind the `system:kube-apiserver-to-kubelet` ClusterRole to the `kube-apiserver` user:
 
 ```shell
 cat <<EOF | kubectl apply -f -
@@ -275,7 +271,7 @@ roleRef:
 subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: User
-    name: kubernetes
+    name: kube-apiserver
 EOF
 ```
 
@@ -287,25 +283,13 @@ In this section you will provision an external load balancer to front the Kubern
 
 Create the load balancer health probe as a pre-requesite for the lb rule that follows.
 ```shell
-az network lb probe create -g kubernetes \
-  --lb-name kubernetes-lb \
-  --name kubernetes-apiserver-probe \
-  --port 6443 \
-  --protocol tcp
+az network lb probe create -g kubernetes --lb-name kubernetes-lb --name kubernetes-apiserver-probe --port 6443 --protocol tcp
 ```
 
 Create the external load balancer network resources:
 
 ```shell
-az network lb rule create -g kubernetes \
-  -n kubernetes-apiserver-rule \
-  --protocol tcp \
-  --lb-name kubernetes-lb \
-  --frontend-ip-name LoadBalancerFrontEnd \
-  --frontend-port 6443 \
-  --backend-pool-name kubernetes-lb-pool \
-  --backend-port 6443 \
-  --probe-name kubernetes-apiserver-probe
+az network lb rule create -g kubernetes -n kubernetes-apiserver-rule --protocol tcp --lb-name kubernetes-lb --frontend-ip-name LoadBalancerFrontEnd --frontend-port 6443 --backend-pool-name kubernetes-lb-pool --backend-port 6443 --probe-name kubernetes-apiserver-probe
 ```
 
 ### Verification
@@ -313,14 +297,14 @@ az network lb rule create -g kubernetes \
 Retrieve the `kubernetes-the-hard-way` static IP address:
 
 ```shell
-KUBERNETES_PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-  -n kubernetes-pip --query ipAddress -otsv)
+az network public-ip show -g kubernetes -n kubernetes-pip --query ipAddress -otsv
 ```
 
 Make a HTTP request for the Kubernetes version info:
 
 ```shell
-curl --cacert ca.pem https://$KUBERNETES_PUBLIC_IP_ADDRESS:6443/version
+KUBERNETES_PUBLIC_IP_ADDRESS=<-Public-IP-from-above-command->
+curl --cacert ca.crt https://$KUBERNETES_PUBLIC_IP_ADDRESS:6443/version
 ```
 
 > output
@@ -328,12 +312,12 @@ curl --cacert ca.pem https://$KUBERNETES_PUBLIC_IP_ADDRESS:6443/version
 ```shell
 {
   "major": "1",
-  "minor": "17",
-  "gitVersion": "v1.17.3",
-  "gitCommit": "06ad960bfd03b39c8310aaf92d1e7c12ce618213",
+  "minor": "18",
+  "gitVersion": "v1.18.4",
+  "gitCommit": "c96aede7b5205121079932896c4ad89bb93260af",
   "gitTreeState": "clean",
-  "buildDate": "2020-02-11T18:07:13Z",
-  "goVersion": "go1.13.6",
+  "buildDate": "2020-06-17T11:33:59Z",
+  "goVersion": "go1.13.9",
   "compiler": "gc",
   "platform": "linux/amd64"
 }
