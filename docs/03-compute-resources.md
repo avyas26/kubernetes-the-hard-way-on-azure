@@ -117,11 +117,9 @@ az network public-ip create -n master-1-pip -g kubernetes
 az network public-ip create -n master-2-pip -g kubernetes
 
 az network nic create -g kubernetes -n master-1-nic --private-ip-address 10.240.0.11 --public-ip-address master-1-pip --vnet kubernetes-vnet --subnet kubernetes-subnet --ip-forwarding --lb-name kubernetes-lb --lb-address-pools kubernetes-lb-pool
-
 az network nic create -g kubernetes -n master-2-nic --private-ip-address 10.240.0.12 --public-ip-address master-2-pip --vnet kubernetes-vnet --subnet kubernetes-subnet --ip-forwarding --lb-name kubernetes-lb --lb-address-pools kubernetes-lb-pool
 
 az vm create -g kubernetes -n master-1 --image %UBUNTULTS% --nics master-1-nic --availability-set master-as --admin-username "kubeadmin" --ssh-key-values <-Full-Path-To->\id_rsa.pub
-
 az vm create -g kubernetes -n master-2 --image %UBUNTULTS% --nics master-2-nic --availability-set master-as --admin-username "kubeadmin" --ssh-key-values <-Full-Path-To->\id_rsa.pub
 
 ```
@@ -139,11 +137,9 @@ az network public-ip create -n worker-1-pip -g kubernetes
 az network public-ip create -n worker-2-pip -g kubernetes
 
 az network nic create -g kubernetes -n worker-1-nic --private-ip-address 10.240.0.21 --public-ip-address worker-1-pip --vnet kubernetes-vnet --subnet kubernetes-subnet --ip-forwarding
-
 az network nic create -g kubernetes -n worker-2-nic --private-ip-address 10.240.0.22 --public-ip-address worker-2-pip --vnet kubernetes-vnet --subnet kubernetes-subnet --ip-forwarding
 
 az vm create -g kubernetes -n worker-1 --image %UBUNTULTS% --nics worker-1-nic --availability-set worker-as --admin-username "kubeadmin" --ssh-key-values <-Full-Path-To->\id_rsa.pub
-
 az vm create -g kubernetes -n worker-2 --image %UBUNTULTS% --nics worker-2-nic --availability-set worker-as --admin-username "kubeadmin" --ssh-key-values <-Full-Path-To->\id_rsa.pub
 
 ```
@@ -182,14 +178,8 @@ for ip in <-Public-IP-Master-1-> <-Public-IP-Master-2-> <-Public-IP-Worker-1-> <
 > ssh -i id_rsa kubeadmin@$ip "hostname -s"
 > done
 master-1
-Warning: Permanently added '13.76.128.181' (RSA) to the list of known hosts.
-/usr/bin/xauth:  file /home/kubeadmin/.Xauthority does not exist
 master-2
-Warning: Permanently added '52.230.67.62' (RSA) to the list of known hosts.
-/usr/bin/xauth:  file /home/kubeadmin/.Xauthority does not exist
 worker-1
-Warning: Permanently added '13.76.7.218' (RSA) to the list of known hosts.
-/usr/bin/xauth:  file /home/kubeadmin/.Xauthority does not exist
 worker-2
 
 ```
