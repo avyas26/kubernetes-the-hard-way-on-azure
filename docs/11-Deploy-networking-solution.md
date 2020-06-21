@@ -29,6 +29,13 @@ daemonset.apps/weave-net created
 ```shell
 kubectl get pods -n kube-system
 ```
+> output
+
+```shell
+NAME              READY   STATUS    RESTARTS   AGE
+weave-net-62gjb   2/2     Running   0          35m
+weave-net-hfs56   2/2     Running   0          35m
+```
 
 
 Next: [Deploying the DNS Cluster Add-on](12-dns-addon.md)
