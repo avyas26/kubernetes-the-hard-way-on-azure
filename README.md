@@ -33,8 +33,7 @@ Kubernetes The Hard Way guides you through bootstrapping a highly available Kube
 This tutorial assumes you have access to the [Microsoft Azure](https://azure.microsoft.com). While Azure is used for basic infrastructure requirements the lessons learned in this tutorial can be applied to other platforms.
 
 * [Prerequisites](docs/01-prerequisites.md)
-* [Installing the Client Tools](docs/02-client-tools.md)
-* [Provisioning Compute Resources](docs/03-compute-resources.md)
+* [Provisioning Compute Resources](docs/02-compute-resources.md)
 * [Provisioning the CA and Generating TLS Certificates](docs/04-certificate-authority.md)
 * [Generating Kubernetes Configuration Files for Authentication](docs/05-kubernetes-configuration-files.md)
 * [Generating the Data Encryption Config and Key](docs/06-data-encryption-keys.md)
