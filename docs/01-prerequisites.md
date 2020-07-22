@@ -2,29 +2,37 @@
 
 ## Microsoft Azure
 
-This tutorial leverages the [Microsoft Azure](https://azure.microsoft.com) to streamline provisioning of the compute infrastructure required to bootstrap a Kubernetes cluster from the ground up. [Sign up](https://azure.microsoft.com/free/) for $200 in free credits. In Azure Free Trial there is a limit of 4 Cores available, therefore tutorial instructions must be changed to create 4 nodes instead of 6 (2 controllers and 2 workers).
-
-[Estimated cost](https://azure.microsoft.com/pricing/calculator/) to run this tutorial: $0.4 per hour ($10 per day).
-
-> The compute resources required for this tutorial will not exceed the Microsoft Azure free tier.
-
-## Microsoft Azure Cloud Platform SDK
+This tutorial leverages [Microsoft Azure](https://azure.microsoft.com) to streamline provisioning of the compute infrastructure required to bootstrap a Kubernetes cluster from ground up. You can [Sign up](https://azure.microsoft.com/free/) for $200 in free credits. 
+In Azure Free Trial there is a limit of 4 Cores available, therefore we will create 4 nodes (2 controllers and 2 workers).
 
 ### Install the Microsoft Azure CLI 2.0
 
-Follow the Microsoft Azure CLI 2.0 [documentation](https://github.com/azure/azure-cli#installation) to install and configure the `az` command line utility.
-
-In this lab I will be using Windows CMD to run the Azure CLI. Follow the [documentation](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-windows?view=azure-cli-latest&tabs=azure-cli) to Install Azure CLI on Windows
+In this lab I will be using [MobaXterm] (https://mobaxterm.mobatek.net/) to run the Azure CLI. Follow the [documentation](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-windows?view=azure-cli-latest&tabs=azure-cli) to Install Azure CLI on Windows.
 
 Verify the Microsoft Azure CLI 2.0 version is 2.1.0 or higher:
 
 ```shell
-az --version
+az version
 ```
+> output
+
+```shell
+{
+  "azure-cli": "2.7.0",
+  "azure-cli-command-modules-nspkg": "2.0.3",
+  "azure-cli-core": "2.7.0",
+  "azure-cli-nspkg": "3.0.4",
+  "azure-cli-telemetry": "1.0.4",
+  "extensions": {}
+}
+```
+NOTE: If you face issues in launching the Azure CLI, check for PATH environment variable. It should have the CLI path set.
+      You can set it using the command ``` export PATH="$PATH:/drives/c/Program Files (x86)/Microsoft SDKs/Azure/CLI2/wbin" ```
 
 ### Create a default Resource Group in a location
 
-The guide assumes you've installed the [Azure CLI 2.0](https://github.com/azure/azure-cli#installation), and will be creating resources in the `southeastasia` location, within a resource group named `kubernetes`. To create this resource group, simply run the following command:
+In this lab I will be creating resources in `southeastasia` location, within a resource group named `kubernetes`. 
+To create this resource group, run the following command:
 
 ```shell
 az group create -n kubernetes -l southeastasia
