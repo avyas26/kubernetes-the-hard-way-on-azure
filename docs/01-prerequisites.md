@@ -7,7 +7,7 @@ In Azure Free Trial there is a limit of 4 Cores available, therefore we will cre
 
 ### Install the Microsoft Azure CLI 2.0
 
-In this lab I will be using [MobaXterm] (https://mobaxterm.mobatek.net/) to run the Azure CLI. Follow the [documentation](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-windows?view=azure-cli-latest&tabs=azure-cli) to Install Azure CLI on Windows.
+In this lab I will be using [MobaXterm](https://mobaxterm.mobatek.net/) to run the Azure CLI. Follow the [documentation](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-windows?view=azure-cli-latest&tabs=azure-cli) to Install Azure CLI on Windows.
 
 Verify the Microsoft Azure CLI 2.0 version is 2.1.0 or higher:
 
