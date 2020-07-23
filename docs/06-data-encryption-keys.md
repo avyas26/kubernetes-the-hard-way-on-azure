@@ -2,11 +2,11 @@
 
 Kubernetes stores a variety of data including cluster state, application configurations, and secrets. Kubernetes supports the ability to [encrypt](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data) cluster data at rest.
 
-In this lab you will generate an encryption key and an [encryption config](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/#understanding-the-encryption-at-rest-configuration) suitable for encrypting Kubernetes Secrets.
+In this lab we will generate an encryption key and an [encryption config](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/#understanding-the-encryption-at-rest-configuration) suitable for encrypting Kubernetes Secrets.
 
 ## The Encryption Key
 
-Generate an encryption key:
+Login to ```master-1``` server and generate an encryption key:
 
 ```shell
 ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
@@ -35,8 +35,7 @@ EOF
 Copy the `encryption-config.yaml` encryption config file to each controller instance:
 
 ```shell
-scp -i id_rsa kubeadmin@<-Public-IP-of-Master-1->:/home/kubeadmin/encryption-config.yaml .
-scp -i id_rsa encryption-config.yaml kubeadmin@<-Public-IP-of-Master-2->:/home/kubeadmin/
+scp ~/encryption-config.yaml master-2:/home/kubeadmin/
 ```
 
 Next: [Bootstrapping the etcd Cluster](07-bootstrapping-etcd.md)
