@@ -188,7 +188,7 @@ authorization:
 clusterDomain: "cluster.local"
 clusterDNS:
   - "10.32.0.10"
-resolvConf: "/run/systemd/resolve/resolv.conf"
+resolvConf: "/etc/resolv.conf"
 runtimeRequestTimeout: "15m"
 EOF
 ```
