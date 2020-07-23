@@ -133,9 +133,9 @@ kube-scheduler.crt  kube-scheduler.csr  kube-scheduler.key
 
 ### The Kubernetes API Server Certificate
 
-The `kubernetes-the-hard-way` static IP address will be included in the list of subject alternative names for the Kubernetes API Server certificate. This will ensure the certificate can be validated by remote clients.
+The `kubernetes-pip` static IP address will be included in the list of subject alternative names for the Kubernetes API Server certificate. This will ensure the certificate can be validated by remote clients.
 
-Retrieve the `kubernetes-the-hard-way` static IP address. We had created this in [Provisioning Compute Resources](02-compute-resources.md#Kubernetes-Public-IP-Address) lab.
+Retrieve the `kubernetes-pip` static IP address. We had created this in [Provisioning Compute Resources](02-compute-resources.md#Kubernetes-Public-IP-Address) lab.
 
 ```shell
 az network public-ip show -g kubernetes -n kubernetes-pip --query "ipAddress" -otsv
