@@ -1,28 +1,23 @@
 # Deploy Pod Networking Solution
 
-We will use Weave as our networking solution. Download the CNI Weave plug-in on both `worker-1` and `worker-2` and extract it under `/opt/cni/bin` directory.
+We will use flannel as our networking solution. Run the below command on ```master-1``` node.
 
 ```shell
-{
-wget https://github.com/containernetworking/plugins/releases/download/v0.8.6/cni-plugins-linux-amd64-v0.8.6.tgz
-sudo tar -xzvf cni-plugins-linux-amd64-v0.8.6.tgz --directory /opt/cni/bin/
-}
-```
-
-## Deploy the Weave network solution by running it once on the `master` node
-
-```shell
-kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 ```
 > output:
 
 ```shell
-serviceaccount/weave-net created
-clusterrole.rbac.authorization.k8s.io/weave-net created
-clusterrolebinding.rbac.authorization.k8s.io/weave-net created
-role.rbac.authorization.k8s.io/weave-net created
-rolebinding.rbac.authorization.k8s.io/weave-net created
-daemonset.apps/weave-net created
+podsecuritypolicy.policy/psp.flannel.unprivileged created
+clusterrole.rbac.authorization.k8s.io/flannel created
+clusterrolebinding.rbac.authorization.k8s.io/flannel created
+serviceaccount/flannel created
+configmap/kube-flannel-cfg created
+daemonset.apps/kube-flannel-ds-amd64 created
+daemonset.apps/kube-flannel-ds-arm64 created
+daemonset.apps/kube-flannel-ds-arm created
+daemonset.apps/kube-flannel-ds-ppc64le created
+daemonset.apps/kube-flannel-ds-s390x created
 ```
 ## Verification
 
@@ -32,9 +27,10 @@ kubectl get pods -n kube-system
 > output
 
 ```shell
-NAME              READY   STATUS    RESTARTS   AGE
-weave-net-62gjb   2/2     Running   0          35m
-weave-net-hfs56   2/2     Running   0          35m
+NAME                          READY   STATUS    RESTARTS   AGE
+kube-flannel-ds-amd64-m6v9x   1/1     Running   0          5m17s
+kube-flannel-ds-amd64-rhfjt   1/1     Running   0          5m25s
+
 ```
 
 
