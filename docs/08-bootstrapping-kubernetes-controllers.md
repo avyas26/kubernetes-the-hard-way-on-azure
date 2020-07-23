@@ -1,19 +1,21 @@
 # Bootstrapping the Kubernetes Control Plane
 
-In this lab you will bootstrap the Kubernetes control plane across two compute nodes and configure it for high availability. You will also create an external load balancer that exposes the Kubernetes API Servers to remote clients. The following components will be installed on each node: Kubernetes API Server, Scheduler, and Controller Manager.
+In this lab we will bootstrap the Kubernetes control plane across two compute nodes and configure it for high availability. We will also create an external load balancer that exposes the Kubernetes API Servers to remote clients. The following components will be installed on each node: Kubernetes API Server, Scheduler, and Controller Manager.
 
 ## Prerequisites
 
-The commands in this lab must be run on each master node: `master-1` and `master-2`. Login to each controller instance using the `az` command to find its public IP and ssh to it. Example:
+The commands in this lab must be run on each master node: `master-1` and `master-2`. Login to each master node using the `az` command to find its public IP and ssh to it. Example:
 
 ```shell
-az network public-ip show -g kubernetes -n master-1-pip --query "ipAddress" -otsv
-ssh -i id_rsa kubeadmin@<-Output-of-above-command->
+for i in 1 2;
+do
+az network public-ip show -g kubernetes -n master-$i-pip --query "ipAddress" -otsv
+done
 ```
 
 ### Running commands in parallel
 
-If you use MobaXTerm you can use the `MultiExec` mode.
+You can use the [Multi-execution](https://mobaxterm.mobatek.net/features.html) feature of MobaXterm
 
 ## Provision the Kubernetes Control Plane
 
@@ -28,7 +30,7 @@ sudo mkdir -p /etc/kubernetes/config
 Download the official Kubernetes release binaries:
 
 ```shell
-wget -q --show-progress --https-only --timestamping \
+wget --progress=bar --timestamping \
 "https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kube-apiserver" \
   "https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kube-controller-manager" \
   "https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kube-scheduler" \
@@ -50,9 +52,9 @@ Install the Kubernetes binaries:
 {
   sudo mkdir -p /var/lib/kubernetes/
 
-  sudo mv ca.crt ca.key kube-apiserver.crt kube-apiserver.key \
-    service-account.crt service-account.key \
-    encryption-config.yaml /var/lib/kubernetes/
+  sudo mv ~/certs/ca.crt ~/certs/ca.key ~/certs/kube-apiserver.crt ~/certs/kube-apiserver.key \
+    ~/certs/service-account.crt ~/certs/service-account.key \
+    ~/encryption-config.yaml /var/lib/kubernetes/
 }
 ```
 
@@ -65,46 +67,48 @@ INTERNAL_IP=$(ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 Create the `kube-apiserver.service` systemd unit file:
 
 ```shell
+cat <<EOF | sudo tee /etc/systemd/system/kube-apiserver.service
 [Unit]
 Description=Kubernetes API Server
 Documentation=https://github.com/kubernetes/kubernetes
 
 [Service]
-ExecStart=/usr/local/bin/kube-apiserver \
-  --advertise-address=10.240.0.11 \
-  --allow-privileged=true \
-  --apiserver-count=2 \
-  --audit-log-maxage=30 \
-  --audit-log-maxbackup=3 \
-  --audit-log-maxsize=100 \
-  --audit-log-path=/var/log/audit.log \
-  --authorization-mode=Node,RBAC \
-  --bind-address=0.0.0.0 \
-  --client-ca-file=/var/lib/kubernetes/ca.crt \
-  --enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,TaintNodesByCondition,Priority,DefaultTolerationSeconds,DefaultStorage
-  --enable-swagger-ui=true \
-  --etcd-cafile=/var/lib/kubernetes/ca.crt \
-  --etcd-certfile=/var/lib/kubernetes/kube-apiserver.crt \
-  --etcd-keyfile=/var/lib/kubernetes/kube-apiserver.key \
-  --etcd-servers=https://10.240.0.11:2379,https://10.240.0.12:2379 \
-  --event-ttl=1h \
-  --experimental-encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml \
-  --kubelet-certificate-authority=/var/lib/kubernetes/ca.crt \
-  --kubelet-client-certificate=/var/lib/kubernetes/kube-apiserver.crt \
-  --kubelet-client-key=/var/lib/kubernetes/kube-apiserver.key \
-  --kubelet-https=true \
-  --runtime-config=api/all=true \
-  --service-account-key-file=/var/lib/kubernetes/service-account.key \
-  --service-cluster-ip-range=10.32.0.0/24 \
-  --service-node-port-range=30000-32767 \
-  --tls-cert-file=/var/lib/kubernetes/kube-apiserver.crt \
-  --tls-private-key-file=/var/lib/kubernetes/kube-apiserver.key \
+ExecStart=/usr/local/bin/kube-apiserver \\
+  --advertise-address=10.240.0.11 \\
+  --allow-privileged=true \\
+  --apiserver-count=2 \\
+  --audit-log-maxage=30 \\
+  --audit-log-maxbackup=3 \\
+  --audit-log-maxsize=100 \\
+  --audit-log-path=/var/log/audit.log \\
+  --authorization-mode=Node,RBAC \\
+  --bind-address=0.0.0.0 \\
+  --client-ca-file=/var/lib/kubernetes/ca.crt \\
+  --enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,TaintNodesByCondition,Priority,DefaultTolerationSeconds \\
+  --enable-swagger-ui=true \\
+  --etcd-cafile=/var/lib/kubernetes/ca.crt \\
+  --etcd-certfile=/var/lib/kubernetes/kube-apiserver.crt \\
+  --etcd-keyfile=/var/lib/kubernetes/kube-apiserver.key \\
+  --etcd-servers=https://10.240.0.11:2379,https://10.240.0.12:2379 \\
+  --event-ttl=1h \\
+  --experimental-encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml \\
+  --kubelet-certificate-authority=/var/lib/kubernetes/ca.crt \\
+  --kubelet-client-certificate=/var/lib/kubernetes/kube-apiserver.crt \\
+  --kubelet-client-key=/var/lib/kubernetes/kube-apiserver.key \\
+  --kubelet-https=true \\
+  --runtime-config=api/all=true \\
+  --service-account-key-file=/var/lib/kubernetes/service-account.key \\
+  --service-cluster-ip-range=10.32.0.0/24 \\
+  --service-node-port-range=30000-32767 \\
+  --tls-cert-file=/var/lib/kubernetes/kube-apiserver.crt \\
+  --tls-private-key-file=/var/lib/kubernetes/kube-apiserver.key \\
   --v=2
 Restart=on-failure
 RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
+EOF
 ```
 
 ### Configure the Kubernetes Controller Manager
@@ -112,7 +116,7 @@ WantedBy=multi-user.target
 Move the `kube-controller-manager` kubeconfig into place:
 
 ```shell
-sudo mv kube-controller-manager.kubeconfig /var/lib/kubernetes/
+sudo mv ~/kubeconfigs/kube-controller-manager.kubeconfig /var/lib/kubernetes/
 ```
 
 Create the `kube-controller-manager.service` systemd unit file:
@@ -151,7 +155,7 @@ EOF
 Move the `kube-scheduler` kubeconfig into place:
 
 ```shell
-sudo mv kube-scheduler.kubeconfig /var/lib/kubernetes/
+sudo mv ~/kubeconfigs/kube-scheduler.kubeconfig /var/lib/kubernetes/
 ```
 
 Create the `kube-scheduler.yaml` configuration file:
@@ -221,13 +225,9 @@ In this section you will configure RBAC permissions to allow the Kubernetes API 
 
 > This tutorial sets the Kubelet `--authorization-mode` flag to `Webhook`. Webhook mode uses the [SubjectAccessReview](https://kubernetes.io/docs/admin/authorization/#checking-api-access) API to determine authorization.
 
-```shell
-az network public-ip show -g kubernetes -n master-1-pip --query "ipAddress" -otsv
-
-ssh -i id_rsa kubeadmin@<-Output-of-above-command->
-```
-
 Create the `system:kube-apiserver-to-kubelet` [ClusterRole](https://kubernetes.io/docs/admin/authorization/rbac/#role-and-clusterrole) with permissions to access the Kubelet API and perform most common tasks associated with managing pods:
+
+> On ```master-1 ``` node
 
 ```shell
 cat <<EOF | kubectl apply -f -
@@ -277,9 +277,7 @@ EOF
 
 ## The Kubernetes Frontend Load Balancer
 
-In this section you will provision an external load balancer to front the Kubernetes API Servers. The `kubernetes-the-hard-way` static IP address will be attached to the resulting load balancer.
-
-> The compute instances created in this tutorial will not have permission to complete this section. Run the following commands from the same machine used to create the compute instances.
+In this section we will provision an external load balancer to front the Kubernetes API Servers. The `kubernetes-pip` static IP address will be attached to the resulting load balancer.
 
 Create the load balancer health probe as a pre-requesite for the lb rule that follows.
 ```shell
@@ -289,12 +287,14 @@ az network lb probe create -g kubernetes --lb-name kubernetes-lb --name kubernet
 Create the external load balancer network resources:
 
 ```shell
-az network lb rule create -g kubernetes -n kubernetes-apiserver-rule --protocol tcp --lb-name kubernetes-lb --frontend-ip-name LoadBalancerFrontEnd --frontend-port 6443 --backend-pool-name kubernetes-lb-pool --backend-port 6443 --probe-name kubernetes-apiserver-probe
+az network lb rule create -g kubernetes -n kubernetes-apiserver-rule --protocol tcp --lb-name kubernetes-lb \
+--frontend-ip-name LoadBalancerFrontEnd --frontend-port 6443 --backend-pool-name kubernetes-lb-pool --backend-port 6443 \
+--probe-name kubernetes-apiserver-probe
 ```
 
 ### Verification
 
-Retrieve the `kubernetes-the-hard-way` static IP address:
+Retrieve the `kubernetes-pip` static IP address:
 
 ```shell
 az network public-ip show -g kubernetes -n kubernetes-pip --query ipAddress -otsv
@@ -304,7 +304,7 @@ Make a HTTP request for the Kubernetes version info:
 
 ```shell
 KUBERNETES_PUBLIC_IP_ADDRESS=<-Public-IP-from-above-command->
-curl --cacert ca.crt https://$KUBERNETES_PUBLIC_IP_ADDRESS:6443/version
+curl --cacert /var/lib/kubernetes/ca.crt https://$KUBERNETES_PUBLIC_IP_ADDRESS:6443/version
 ```
 
 > output
@@ -313,10 +313,10 @@ curl --cacert ca.crt https://$KUBERNETES_PUBLIC_IP_ADDRESS:6443/version
 {
   "major": "1",
   "minor": "18",
-  "gitVersion": "v1.18.4",
-  "gitCommit": "c96aede7b5205121079932896c4ad89bb93260af",
+  "gitVersion": "v1.18.6",
+  "gitCommit": "dff82dc0de47299ab66c83c626e08b245ab19037",
   "gitTreeState": "clean",
-  "buildDate": "2020-06-17T11:33:59Z",
+  "buildDate": "2020-07-15T16:51:04Z",
   "goVersion": "go1.13.9",
   "compiler": "gc",
   "platform": "linux/amd64"
