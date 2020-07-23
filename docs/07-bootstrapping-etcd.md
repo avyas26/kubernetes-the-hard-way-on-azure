@@ -1,16 +1,18 @@
 # Bootstrapping the etcd Cluster
 
-Kubernetes components are stateless and store cluster state in [etcd](https://github.com/etcd-io/etcd). In this lab you will bootstrap a two node etcd cluster and configure it for high availability and secure remote access.
+Kubernetes components are stateless and store cluster state in [etcd](https://github.com/etcd-io/etcd). In this lab we will bootstrap a two node etcd cluster and configure it for high availability and secure remote access.
 
 ## Prerequisites
 
 The commands in this lab must be run on each master node: `master-1` and `master-2`. Login to each master node using the `az` command to find its public IP and ssh to it. Example:
 
 ```shell
-az network public-ip show -g kubernetes -n master-1-pip --query "ipAddress" -otsv
-
-ssh -i id_rsa kubeadmin@<-Output-of-above-command->
+for i in 1 2;
+do
+az network public-ip show -g kubernetes -n master-$i-pip --query "ipAddress" -otsv
+done
 ```
+> You can use the [Multi-execution](https://mobaxterm.mobatek.net/features.html) feature of MobaXterm
 
 ## Bootstrapping an etcd Cluster Member
 
@@ -19,7 +21,7 @@ ssh -i id_rsa kubeadmin@<-Output-of-above-command->
 Download the official etcd release binaries from the [etcd-io/etcd](https://github.com/etcd-io/etcd) GitHub project:
 
 ```shell
-wget -q --show-progress --https-only --timestamping "https://github.com/etcd-io/etcd/releases/download/v3.4.9/etcd-v3.4.9-linux-amd64.tar.gz"
+wget --progress=bar --timestamping "https://github.com/etcd-io/etcd/releases/download/v3.4.9/etcd-v3.4.9-linux-amd64.tar.gz"
 ```
 
 Extract and install the `etcd` server and the `etcdctl` command line utility:
@@ -108,7 +110,7 @@ sudo mv etcd.service /etc/systemd/system/
 List the etcd cluster members:
 
 ```shell
-sudo ETCDCTL_API=3 etcdctl member list \
+ETCDCTL_API=3 etcdctl member list \
   --endpoints=https://${INTERNAL_IP}:2379 \
   --cacert=/etc/etcd/ca.crt \
   --cert=/etc/etcd/kube-apiserver.crt \
@@ -121,5 +123,6 @@ sudo ETCDCTL_API=3 etcdctl member list \
 3a57933972cb5131, started, master-2, https://10.240.0.12:2380, https://10.240.0.12:2379, false
 ffed16798470cab5, started, master-1, https://10.240.0.11:2380, https://10.240.0.11:2379, false
 ```
+> NOTE: If you get error message ```Error: context deadline exceeded``` during above step stop the firewalld service on both the nodes.
 
 Next: [Bootstrapping the Kubernetes Control Plane](08-bootstrapping-kubernetes-controllers.md)
