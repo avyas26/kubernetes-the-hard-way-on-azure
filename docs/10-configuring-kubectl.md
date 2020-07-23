@@ -48,4 +48,4 @@ worker-2   NotReady   <none>   39m   v1.18.6
 ```
 Note: Worker nodes will move to `Ready` state after we deploy networking solution.
 
-Next: [Provisioning Pod Network Routes](11-pod-network-routes.md)
+Next: [Deploy Pod Networking Solution](11-Deploy-networking-solution.md)
