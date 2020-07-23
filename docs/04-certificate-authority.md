@@ -238,9 +238,12 @@ Copy ca.crt & worker* to respective worker nodes and ca.crt ca.key kube-apiserve
 {
 for i in 1 2; \
 do \
-scp certs/ca.crt certs/worker-$i* kubeadmin@worker-$i:/home/kubeadmin/; \
+ssh worker-$i "mkdir -p ~/certs"
+scp certs/ca.crt certs/worker-$i* kubeadmin@worker-$i:/home/kubeadmin/certs/; \
 done
-scp certs/ca.* certs/kube-apiserver* certs/service-account* kubeadmin@master-2:/home/kubeadmin/
+
+ssh master-2 "mkdir -p ~/certs"
+scp certs/ca.* certs/kube-apiserver* certs/service-account* kubeadmin@master-2:/home/kubeadmin/certs/
 }
 ```
 
