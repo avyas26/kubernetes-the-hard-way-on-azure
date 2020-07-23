@@ -185,10 +185,12 @@ Copy the appropriate `kubelet` and `kube-proxy` kubeconfig files to respective w
 {
 for i in 1 2; \
 do \
-scp ~/kubeconfigs/worker-$i* ~/kubeconfigs/kube-proxy* worker-$i:/home/kubeadmin/; \
+ssh worker-$i "mkdir -p ~/kubeconfigs"
+scp ~/kubeconfigs/worker-$i* ~/kubeconfigs/kube-proxy* worker-$i:/home/kubeadmin/kubeconfigs; \
 done
 
-scp ~/kubeconfigs/kube-* ~/kubeconfigs/admin* master-2:/home/kubeadmin/
+ssh master-2 "mkdir -p ~/kubeconfigs"
+scp ~/kubeconfigs/kube-* ~/kubeconfigs/admin* master-2:/home/kubeadmin/kubeconfigs
 }
 ```
 
