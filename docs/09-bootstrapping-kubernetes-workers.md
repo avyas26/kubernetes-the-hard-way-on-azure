@@ -1,21 +1,22 @@
 # Bootstrapping the Kubernetes Worker Nodes
 
-In this lab you will bootstrap two Kubernetes worker nodes. The following components will be installed on each node: [docker](https://docker.io), [kubelet](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/), and [kube-proxy](https://kubernetes.io/docs/concepts/cluster-administration/proxies/).
+In this lab we will bootstrap two Kubernetes worker nodes. The following components will be installed on each node: [docker](https://docker.io), [kubelet](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/), and [kube-proxy](https://kubernetes.io/docs/concepts/cluster-administration/proxies/).
 
 ## Prerequisites
 
 The commands in this lab must be run on each worker node: `worker-1` and `worker-2`.
-
-Login to each worker instance using the `az` command to find its public IP and ssh to it. Example:
+Retrieve the public IP of each worker instance using the `az` command:
 
 ```shell
-az network public-ip show -g kubernetes -n worker-1-pip --query "ipAddress" -otsv
-ssh -i id_rsa kubeadmin@<-Output-of-above-command->
+for i in 1 2; \
+do \
+az network public-ip show -g kubernetes -n worker-$i-pip --query "ipAddress" -otsv; \
+done
 ```
 
 ### Running commands in parallel with tmux
 
-If you use MobaXTerm you can use the MultiExec mode.
+You can use the [Multi-execution](https://mobaxterm.mobatek.net/features.html) feature of MobaXterm
 
 ## Provisioning a Kubernetes Worker Node
 
@@ -23,8 +24,36 @@ Install docker:
 
 ```shell
 {
-  sudo apt-get update
-  sudo apt-get -y install docker.io
+sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+sudo yum-config-manager --add-repo \
+  https://download.docker.com/linux/centos/docker-ce.repo \
+sudo -i
+yum update -y && yum install -y \
+  containerd.io-1.2.13 \
+  docker-ce-19.03.11 \
+  docker-ce-cli-19.03.11
+mkdir /etc/docker
+exit
+}
+
+{
+cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2",
+  "storage-opts": [
+    "overlay2.override_kernel_check=true"
+  ]
+}
+EOF
+sudo mkdir -p /etc/systemd/system/docker.service.d
+sudo systemctl daemon-reload
+sudo systemctl enable docker
+sudo systemctl start docker
 }
 ```
 
@@ -39,38 +68,33 @@ Install docker:
 > Ouput
 
 ```shell
-Client:
- Version:           19.03.6
+Client: Docker Engine - Community
+ Version:           19.03.12
  API version:       1.40
- Go version:        go1.12.17
- Git commit:        369ce74a3c
- Built:             Fri Feb 28 23:45:43 2020
+ Go version:        go1.13.10
+ Git commit:        48a66213fe
+ Built:             Mon Jun 22 15:46:54 2020
  OS/Arch:           linux/amd64
  Experimental:      false
 
-Server:
+Server: Docker Engine - Community
  Engine:
-  Version:          19.03.6
+  Version:          19.03.12
   API version:      1.40 (minimum version 1.12)
-  Go version:       go1.12.17
-  Git commit:       369ce74a3c
-  Built:            Wed Feb 19 01:06:16 2020
+  Go version:       go1.13.10
+  Git commit:       48a66213fe
+  Built:            Mon Jun 22 15:45:28 2020
   OS/Arch:          linux/amd64
   Experimental:     false
  containerd:
-  Version:          1.3.3-0ubuntu1~18.04.2
-  GitCommit:
+  Version:          1.2.13
+  GitCommit:        7ad184331fa3e55e52b890ea95e65ba581ae3429
  runc:
-  Version:          spec: 1.0.1-dev
-  GitCommit:
+  Version:          1.0.0-rc10
+  GitCommit:        dc9208a3303feef5b3839f4323d9beb36df0a9dd
  docker-init:
   Version:          0.18.0
-  GitCommit:
-Unable to find image 'hello-world:latest' locally
-latest: Pulling from library/hello-world
-0e03bdcc26d7: Pull complete
-Digest: sha256:d58e752213a51785838f9eed2b7a498ffa1cb3aa7f946dda11af39286c3db9a9
-Status: Downloaded newer image for hello-world:latest
+  GitCommit:        fec3683
 
 Hello from Docker!
 This message shows that your installation appears to be working correctly.
@@ -97,7 +121,7 @@ For more examples and ideas, visit:
 ### Download and Install Worker Binaries
 
 ```shell
-wget -q --show-progress --https-only --timestamping \
+wget --progress=bar --timestamping \
   https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl \
   https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kube-proxy \
   https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubelet
@@ -129,18 +153,18 @@ Install the worker binaries:
 ### For worker-1:
 ```shell
 {
-  sudo mv worker-1.key worker-1.crt /var/lib/kubelet/
-  sudo mv worker-1.kubeconfig /var/lib/kubelet/kubeconfig
-  sudo mv ca.crt /var/lib/kubernetes/
+  sudo mv ~/certs/worker-1.key ~/certs/worker-1.crt /var/lib/kubelet/
+  sudo mv ~/kubeconfigs/worker-1.kubeconfig /var/lib/kubelet/kubeconfig
+  sudo mv ~/certs/ca.crt /var/lib/kubernetes/
 }
 ```
 
 ### For worker-2:
 ```shell
 {
-  sudo mv worker-2.key worker-2.crt /var/lib/kubelet/
-  sudo mv worker-2.kubeconfig /var/lib/kubelet/kubeconfig
-  sudo mv ca.crt /var/lib/kubernetes/
+  sudo mv ~/certs/worker-2.key ~/certs/worker-2.crt /var/lib/kubelet/
+  sudo mv ~/kubeconfigs/worker-2.kubeconfig /var/lib/kubelet/kubeconfig
+  sudo mv ~/certs/ca.crt /var/lib/kubernetes/
 }
 ```
 
@@ -216,6 +240,7 @@ ExecStart=/usr/local/bin/kubelet \\
   --kubeconfig=/var/lib/kubelet/kubeconfig \\
   --tls-cert-file=/var/lib/kubelet/worker-2.crt \\
   --tls-private-key-file=/var/lib/kubelet/worker-2.key \\
+  --cgroup-driver=systemd \\
   --network-plugin=cni \\
   --register-node=true \\
   --v=2
@@ -230,7 +255,7 @@ EOF
 ### Configure the Kubernetes Proxy
 
 ```shell
-sudo mv kube-proxy.kubeconfig /var/lib/kube-proxy/kubeconfig
+sudo mv ~/kubeconfigs/kube-proxy.kubeconfig /var/lib/kube-proxy/kubeconfig
 ```
 
 Create the `kube-proxy-config.yaml` configuration file:
@@ -276,14 +301,7 @@ EOF
 ```
 ## Verification
 
-Login to `master-1` node:
-
-```shell
-az network public-ip show -g kubernetes -n master-1-pip --query "ipAddress" -otsv
-ssh -i id_rsa kubeadmin@<-Output-of-above-command->
-```
-
-List the registered Kubernetes nodes:
+Login to `master-1` node and list the registered Kubernetes nodes:
 
 ```shell
 kubectl get nodes
@@ -293,8 +311,8 @@ kubectl get nodes
 
 ```shell
 NAME       STATUS     ROLES    AGE   VERSION
-worker-1   NotReady   <none>   7m    v1.18.4
-worker-2   NotReady   <none>   90s   v1.18.4
+worker-1   NotReady   <none>   61s   v1.18.6
+worker-2   NotReady   <none>   9s    v1.18.6
 ```
 
 Next: [Configuring kubectl for Remote Access](10-configuring-kubectl.md)
