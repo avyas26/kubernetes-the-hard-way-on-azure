@@ -1,16 +1,16 @@
 # Generating Kubernetes Configuration Files for Authentication
 
-In this lab you will generate [Kubernetes configuration files](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/), also known as kubeconfigs, which enable Kubernetes clients to locate and authenticate to the Kubernetes API Servers.
+In this lab we will generate [Kubernetes configuration files](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/), also known as kubeconfigs, which enable Kubernetes clients to locate and authenticate to the Kubernetes API Servers.
 
 ## Client Authentication Configs
 
-In this section you will generate kubeconfig files for the `controller manager`, `kubelet`, `kube-proxy`, and `scheduler` clients and the `admin` user.
+In this section we will generate kubeconfig files for the `controller manager`, `kubelet`, `kube-proxy`, and `scheduler` clients and the `admin` user.
 
 ### Kubernetes Public IP Address
 
 Each kubeconfig requires a Kubernetes API Server to connect to. To support high availability the IP address assigned to the external load balancer fronting the Kubernetes API Servers will be used.
 
-Retrieve the `kubernetes-the-hard-way` static IP address:
+Retrieve the static IP address. We had created this in [Provisioning Compute Resources](02-compute-resources.md#Kubernetes-Public-IP-Address) lab.
 
 ```shell
 az network public-ip show -g kubernetes -n kubernetes-pip --query "ipAddress" -otsv
@@ -24,7 +24,8 @@ Generate a kubeconfig file for each worker node:
 
 ```shell
 
-ssh -i id_rsa kubeadmin@<Public-IP-of-Master-1->
+ssh kubeadmin@<Public-IP-of-Master-1->
+{
 KUBERNETES_PUBLIC_ADDRESS=<-Public-IP-Generated-from-above-command->
 certs=/home/kubeadmin/certs
 
@@ -51,6 +52,7 @@ for instance in worker-1 worker-2; do
 
   kubectl config use-context default --kubeconfig=${instance}.kubeconfig
 done
+}
 
 ls worker*
 worker-1.kubeconfig  worker-2.kubeconfig
@@ -177,23 +179,17 @@ admin.kubeconfig
 ```
 ## Distribute the Kubernetes Configuration Files
 
-There is no connectivity established between VMs yet so we will copy the kubeconfigs directory to desktop and copy them to required VMs.
+Copy the appropriate `kubelet` and `kube-proxy` kubeconfig files to respective worker nodes and `kube-controller-manager` `admin` and `kube-scheduler` kubeconfig files to master-2
 
 ```shell
-scp -i id_rsa kubeadmin@<-Public-IP-Master-1->:/home/kubeadmin/kubeconfigs/* kubeconfigs/
-```
+{
+for i in 1 2; \
+do \
+scp ~/kubeconfigs/worker-$i* ~/kubeconfigs/kube-proxy* worker-$i:/home/kubeadmin/; \
+done
 
-Copy the appropriate `kubelet` and `kube-proxy` kubeconfig files to respective worker nodes:
-
-```shell
-scp -i id_rsa kubeconfigs/worker-1* kubeconfigs/kube-proxy* kubeadmin@<-Public-IP-Worker-1->:/home/kubeadmin/
-scp -i id_rsa kubeconfigs/worker-2* kubeconfigs/kube-proxy* kubeadmin@<-Public-IP-Worker-2->:/home/kubeadmin/
-```
-
-Since we have generated the kubeconfigs on master-1 node we will copy `kube-controller-manager` `admin` and `kube-scheduler` kubeconfig files to master-2 node:
-
-```shell
-scp -i id_rsa kubeconfigs/kube-* kubeconfigs/admin* kubeadmin@<-Public-IP-Master-2->:/home/kubeadmin/
+scp ~/kubeconfigs/kube-* ~/kubeconfigs/admin* master-2:/home/kubeadmin/
+}
 ```
 
 Next: [Generating the Data Encryption Config and Key](06-data-encryption-keys.md)
