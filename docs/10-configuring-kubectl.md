@@ -1,18 +1,18 @@
 # Configuring kubectl for Remote Access
 
-I have kubectl installed on my Windows laptop. In order to access the cluster `kubernetes-the-hard-way` from `cmd` edit the admin.kubeconfig file we copied to laptop during [Generating Kubernetes Configuration Files for Authentication](05-kubernetes-configuration-files.md) step under section `Distribute the Kubernetes Configuration Files`
+Till now we have been using ```master-1``` as our administrative machine. Now that the cluster services are up and running we can query it using ```kubectl``` installed on local machine or laptop. Clik the link for steps to install [kubectl on Windows](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+
+In order to access the cluster we will need to copy admin.kubeconfig file from ```master-1``` server to local machine or laptop.
+Run the below steps on MobaXterm CLI to copy the file and replace the IP.
 
 ## The Admin Kubernetes Configuration File
 
-Retrieve the `kubernetes-the-hard-way` static IP address:
-
 ```shell
-az network public-ip show -g kubernetes -n kubernetes-pip --query ipAddress -otsv
-```
-Edit the admin.kubeconfig file and replace the server with the static IP Address obtained from above command:
-
-```shell
-    server: https://<Public-IP-Address-here->:6443
+mkdir kubeconfigs
+master1ip=`az network public-ip show -g kubernetes -n master-1-pip --query "ipAddress" -otsv | tr -d '[:space:]'`
+scp kubeadmin@${master1ip}:/home/kubeadmin/kubeconfigs/admin.kubeconfig ./kubeconfigs/
+staticip=`az network public-ip show -g kubernetes -n kubernetes-pip --query ipAddress -otsv | tr -d '[:space:]'`
+sed -i "s/127.0.0.1/$staticip/g" ./kubeconfigs/admin.kubeconfig
 ```
 
 ## Verification
@@ -20,31 +20,31 @@ Edit the admin.kubeconfig file and replace the server with the static IP Address
 Check the health of the remote Kubernetes cluster:
 
 ```shell
-kubectl get componentstatuses --kubeconfig=kubeconfigs\admin.kubeconfig
+kubectl get componentstatuses --kubeconfig=./kubeconfigs/admin.kubeconfig
 ```
 
 > output
 
 ```shell
-NAME                 STATUS    MESSAGE              ERROR
-controller-manager   Healthy   ok
+NAME                 STATUS    MESSAGE             ERROR
 scheduler            Healthy   ok
-etcd-0               Healthy   {"health": "true"}
-etcd-1               Healthy   {"health": "true"}
+controller-manager   Healthy   ok
+etcd-0               Healthy   {"health":"true"}
+etcd-1               Healthy   {"health":"true"}
 ```
 
 List the nodes in the remote Kubernetes cluster:
 
 ```shell
-kubectl get nodes --kubeconfig=kubeconfigs\admin.kubeconfig
+kubectl get nodes --kubeconfig=./kubeconfigs/admin.kubeconfig
 ```
 
 > output
 
 ```shell
-NAME       STATUS     ROLES    AGE     VERSION
-worker-1   NotReady   <none>   15m     v1.18.4
-worker-2   NotReady   <none>   9m37s   v1.18.4
+NAME       STATUS     ROLES    AGE   VERSION
+worker-1   NotReady   <none>   40m   v1.18.6
+worker-2   NotReady   <none>   39m   v1.18.6
 ```
 Note: Worker nodes will move to `Ready` state after we deploy networking solution.
 
