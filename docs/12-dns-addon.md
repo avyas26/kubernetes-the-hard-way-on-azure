@@ -63,6 +63,7 @@ metadata:
 data:
   Corefile: |
     .:53 {
+        log
         errors
         health {
             lameduck 5s
@@ -90,9 +91,7 @@ metadata:
     k8s-app: kube-dns
     kubernetes.io/name: "CoreDNS"
 spec:
-  # replicas: not specified here:
-  # 1. Default is 1.
-  # 2. Will be tuned in real time if DNS horizontal auto-scaling is turned on.
+  replicas: 2
   strategy:
     type: RollingUpdate
     rollingUpdate:
