@@ -87,36 +87,42 @@ POD_NAME=$(kubectl get pods -l app=nginx -o jsonpath="{.items[0].metadata.name}"
 Forward port `8080` on your local machine to port `80` of the `nginx` pod:
 
 ```shell
-kubectl port-forward $POD_NAME 8080:80
+kubectl port-forward $POD_NAME 8082:80
 ```
 
 > output
 
 ```shell
-Forwarding from [::1]:8080 -> 80
+Forwarding from 127.0.0.1:8082 -> 80
+Forwarding from [::1]:8082 -> 80
 ```
 
 In a new terminal make an HTTP request using the forwarding address:
 
 ```shell
-curl --head http://127.0.0.1:8080
+curl --head http://127.0.0.1:8082
 ```
 
 > output
 
 ```shell
 HTTP/1.1 200 OK
-Cache-Control: no-cache, private
-Content-Type: application/json
-Date: Thu, 23 Jul 2020 13:53:44 GMT
+Server: nginx/1.19.1
+Date: Sun, 26 Jul 2020 11:50:11 GMT
+Content-Type: text/html
+Content-Length: 612
+Last-Modified: Tue, 07 Jul 2020 15:52:25 GMT
+Connection: keep-alive
+ETag: "5f049a39-264"
+Accept-Ranges: bytes
 ```
 
 Switch back to the previous terminal and stop the port forwarding to the `nginx` pod:
 
 ```shell
-Forwarding from 127.0.0.1:8080 -> 80
-Forwarding from [::1]:8080 -> 80
-Handling connection for 8080
+Forwarding from 127.0.0.1:8082 -> 80
+Forwarding from [::1]:8082 -> 80
+Handling connection for 8082
 ^C
 ```
 
@@ -133,7 +139,7 @@ kubectl logs $POD_NAME
 > output
 
 ```shell
-127.0.0.1 - - [23/Feb/2020:12:15:34 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/7.68.0" "-"
+127.0.0.1 - - [26/Jul/2020:11:50:11 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/7.29.0" "-"
 ```
 
 ### Exec
@@ -159,7 +165,7 @@ In this section you will verify the ability to expose applications using a [Serv
 Expose the `nginx` deployment using a [NodePort](https://kubernetes.io/docs/concepts/services-networking/service/#nodeport) service:
 
 ```shell
-kubectl expose pod $POD_NAME --port 80 --type NodePort
+kubectl expose deployment nginx --port 80 --type NodePort
 ```
 
 > The LoadBalancer service type can not be used because your cluster is not configured with [cloud provider integration](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#azure). Setting up cloud provider integration is out of scope for this tutorial.
@@ -171,23 +177,11 @@ NODE_PORT=$(kubectl get svc nginx \
   --output=jsonpath='{range .spec.ports[0]}{.nodePort}')
 ```
 
-Create a firewall rule that allows remote access to the `nginx` node port:
+Retrieve the worker node assigned to nginx pod and then retreive external IP address of that worker instance:
 
 ```shell
-az network nsg rule create -g kubernetes \
-  -n kubernetes-allow-nginx \
-  --access allow \
-  --destination-address-prefix '*' \
-  --destination-port-range ${NODE_PORT} \
-  --direction inbound \
-  --nsg-name kubernetes-nsg \
-  --protocol tcp \
-  --source-address-prefix '*' \
-  --source-port-range '*' \
-  --priority 1002
+kubectl get pods -l app=nginx --output=jsonpath='{.items[*].spec.nodeName}'
 ```
-
-Retrieve the external IP address of a worker instance:
 
 ```shell
 EXTERNAL_IP=$(az network public-ip show -g kubernetes \
