@@ -20,21 +20,35 @@ You can use the [Multi-execution](https://mobaxterm.mobatek.net/features.html) f
 
 ## Provisioning a Kubernetes Worker Node
 
+Install dependencies:
+
+```shell
+{
+sudo yum -y update
+sudo yum -y install socat conntrack ipset
+}
+```
+
 Install docker:
 
 ```shell
 {
 sudo yum install -y yum-utils device-mapper-persistent-data lvm2
 sudo yum-config-manager --add-repo \
-  https://download.docker.com/linux/centos/docker-ce.repo \
+  https://download.docker.com/linux/centos/docker-ce.repo
+}
+
 sudo -i
+
+{
 yum update -y && yum install -y \
   containerd.io-1.2.13 \
   docker-ce-19.03.11 \
   docker-ce-cli-19.03.11
 mkdir /etc/docker
-exit
 }
+
+exit
 
 {
 cat <<EOF | sudo tee /etc/docker/daemon.json
@@ -69,21 +83,21 @@ sudo systemctl start docker
 
 ```shell
 Client: Docker Engine - Community
- Version:           19.03.12
+ Version:           19.03.11
  API version:       1.40
  Go version:        go1.13.10
- Git commit:        48a66213fe
- Built:             Mon Jun 22 15:46:54 2020
+ Git commit:        42e35e61f3
+ Built:             Mon Jun  1 09:13:48 2020
  OS/Arch:           linux/amd64
  Experimental:      false
 
 Server: Docker Engine - Community
  Engine:
-  Version:          19.03.12
+  Version:          19.03.11
   API version:      1.40 (minimum version 1.12)
   Go version:       go1.13.10
-  Git commit:       48a66213fe
-  Built:            Mon Jun 22 15:45:28 2020
+  Git commit:       42e35e61f3
+  Built:            Mon Jun  1 09:12:26 2020
   OS/Arch:          linux/amd64
   Experimental:     false
  containerd:
@@ -95,6 +109,11 @@ Server: Docker Engine - Community
  docker-init:
   Version:          0.18.0
   GitCommit:        fec3683
+Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+0e03bdcc26d7: Pull complete
+Digest: sha256:49a1c8800c94df04e9658809b006fd8a686cab8028d33cfba2cc049724254202
+Status: Downloaded newer image for hello-world:latest
 
 Hello from Docker!
 This message shows that your installation appears to be working correctly.
@@ -170,6 +189,9 @@ Install the worker binaries:
 
 > Remember to run the below commands on each worker node: `worker-1` and `worker-2`.
 
+```shell
+POD_CIDR="$(echo $(curl --silent -H Metadata:true "http://169.254.169.254/metadata/instance/compute/tags?api-version=2019-06-01&format=text") | cut -d : -f2)"
+```
 Create the `kubelet-config.yaml` configuration file:
 
 ```shell
@@ -188,6 +210,7 @@ authorization:
 clusterDomain: "cluster.local"
 clusterDNS:
   - "10.32.0.10"
+podCIDR: "${POD_CIDR}"
 resolvConf: "/etc/resolv.conf"
 runtimeRequestTimeout: "15m"
 EOF
