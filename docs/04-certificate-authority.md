@@ -53,6 +53,13 @@ Kubernetes uses a [special-purpose authorization mode](https://kubernetes.io/doc
 Generate a certificate and private key for each Kubernetes worker node:
 
 ```shell
+az network public-ip show -g kubernetes \
+>   -n kubernetes-pip --query ipAddress -o tsv
+```
+
+```shell
+PIPADDR=<-Add-Public-IP-here->
+
 for i in 1 2; \
 do \
 cat > openssl-worker-$i.cnf <<EOF
@@ -67,6 +74,7 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = worker-$i
 IP.1 = 10.240.0.2$i
+IP.2 = ${external_ip}
 EOF
 done
 
@@ -239,11 +247,11 @@ Copy ca.crt & worker* to respective worker nodes and ca.crt ca.key kube-apiserve
 for i in 1 2; \
 do \
 ssh worker-$i "mkdir -p ~/certs"
-scp certs/ca.crt certs/worker-$i* kubeadmin@worker-$i:/home/kubeadmin/certs/; \
+scp ~/certs/ca.crt ~/certs/worker-$i* kubeadmin@worker-$i:/home/kubeadmin/certs/; \
 done
 
 ssh master-2 "mkdir -p ~/certs"
-scp certs/ca.* certs/kube-apiserver* certs/service-account* kubeadmin@master-2:/home/kubeadmin/certs/
+scp ~/certs/ca.* ~/certs/kube-apiserver* ~/certs/service-account* kubeadmin@master-2:/home/kubeadmin/certs/
 }
 ```
 
