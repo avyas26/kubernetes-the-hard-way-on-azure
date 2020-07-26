@@ -25,8 +25,9 @@ Generate a kubeconfig file for each worker node:
 ```shell
 
 ssh kubeadmin@<Public-IP-of-Master-1->
-{
+
 KUBERNETES_PUBLIC_ADDRESS=<-Public-IP-Generated-from-above-command->
+{
 certs=/home/kubeadmin/certs
 
 mkdir kubeconfigs
@@ -186,11 +187,11 @@ Copy the appropriate `kubelet` and `kube-proxy` kubeconfig files to respective w
 for i in 1 2; \
 do \
 ssh worker-$i "mkdir -p ~/kubeconfigs"
-scp ~/kubeconfigs/worker-$i* ~/kubeconfigs/kube-proxy* worker-$i:/home/kubeadmin/kubeconfigs; \
+scp ~/kubeconfigs/worker-$i* ~/kubeconfigs/kube-proxy* worker-$i:/home/kubeadmin/kubeconfigs/; \
 done
 
 ssh master-2 "mkdir -p ~/kubeconfigs"
-scp ~/kubeconfigs/kube-* ~/kubeconfigs/admin* master-2:/home/kubeadmin/kubeconfigs
+scp ~/kubeconfigs/kube-* ~/kubeconfigs/admin* master-2:/home/kubeadmin/kubeconfigs/
 }
 ```
 
