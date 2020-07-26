@@ -238,7 +238,7 @@ coredns-59845f77f8-b4x76   1/1     Running   0          15s
 Create a `busybox` deployment:
 
 ```
-kubectl run --generator=run-pod/v1 busybox --image=busybox:1.28 --command -- sleep 3600
+kubectl run busybox --image=busybox:1.28 --command -- sleep 3600
 ```
 
 List the pod created by the `busybox` deployment:
