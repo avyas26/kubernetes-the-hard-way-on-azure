@@ -37,18 +37,24 @@ az network vnet subnet update -g kubernetes -n kubernetes-subnet \
 --vnet-name kubernetes-vnet --network-security-group kubernetes-nsg
 ```
 
-Create a firewall rule that allows external SSH and HTTPS:
+Create a firewall rule that allows all internal traffic and external SSH and HTTPS:
+
+```shell
+az network nsg rule create -g kubernetes -n kubernetes-allow-internal --access allow --destination-address-prefix "*" \
+--destination-port-range "*" --direction inbound --nsg-name kubernetes-nsg --protocol "*" \
+--source-address-prefix 10.240.0.0/24 10.200.0.0/16 --source-port-range "*" --priority 1000
+```
 
 ```shell
 az network nsg rule create -g kubernetes -n kubernetes-allow-ssh --access allow --destination-address-prefix "*" \
 --destination-port-range 22 --direction inbound --nsg-name kubernetes-nsg --protocol tcp --source-address-prefix "*" \
---source-port-range "*" --priority 1000
+--source-port-range "*" --priority 1001
 ```
 
 ```shell
 az network nsg rule create -g kubernetes -n kubernetes-allow-api-server --access allow --destination-address-prefix "*" \
 --destination-port-range 6443 --direction inbound --nsg-name kubernetes-nsg --protocol tcp --source-address-prefix "*" \
---source-port-range "*" --priority 1001
+--source-port-range "*" --priority 1002
 ```
 
 > An [external load balancer](https://docs.microsoft.com/azure/load-balancer/load-balancer-overview) will be used to expose the Kubernetes API Servers to remote clients.
@@ -63,10 +69,11 @@ az network nsg rule list -g kubernetes --nsg-name kubernetes-nsg \
 > output
 
 ```shell
-Name                         Direction      Priority    Port
+Name                         Direction    Priority    Port
 ---------------------------  -----------  ----------  ------
-kubernetes-allow-ssh         Inbound            1000      22
-kubernetes-allow-api-server  Inbound            1001    6443
+kubernetes-allow-internal    Inbound      1000        *
+kubernetes-allow-ssh         Inbound      1001        22
+kubernetes-allow-api-server  Inbound      1002        6443
 ```
 
 ### Kubernetes Public IP Address
@@ -142,7 +149,7 @@ done
 ```shell
 for i in 1 2; \
 do \
-az vm create -g kubernetes -n master-$i --image $RHEL --nics master-$i-nic --availability-set master-as \
+az vm create -g kubernetes -n master-$i --image $RHEL --nics master-$i-nic --availability-set master-as --nsg '' \
 --admin-username "kubeadmin" --admin-password "kubeadmin@123"; \
 done
 ```
@@ -162,8 +169,8 @@ do \
 az network public-ip create -n worker-$i-pip -g kubernetes
 az network nic create -g kubernetes -n worker-$i-nic --private-ip-address 10.240.0.2$i \
 --public-ip-address worker-$i-pip --vnet kubernetes-vnet --subnet kubernetes-subnet --ip-forwarding
-az vm create -g kubernetes -n worker-$i --image $RHEL --nics worker-$i-nic --availability-set worker-as \
---admin-username "kubeadmin" --admin-password "kubeadmin@123"; \
+az vm create -g kubernetes -n worker-$i --image $RHEL --nics worker-$i-nic --tags pod-cidr=10.200.${i}.0/24 \
+--availability-set worker-as --nsg '' --admin-username "kubeadmin" --admin-password "kubeadmin@123"; \
 done
 ```
 
