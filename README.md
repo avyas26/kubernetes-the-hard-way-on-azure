@@ -3,9 +3,9 @@
 This tutorial walks you through setting up Kubernetes the hard way. This guide is not for people looking for a fully automated command to bring up a Kubernetes cluster. If that's you then check out [Azure Container Services](https://azure.microsoft.com/en-us/services/container-service), or the [Getting Started Guides](http://kubernetes.io/docs/getting-started-guides).
 
 This tutorial uses [Microsoft Azure](https://azure.microsoft.com) and [Azure CLI 2.0](https://github.com/azure/azure-cli).
-It is a fork from [Kubernetes The Hard Way on Azure](https://github.com/ivanfioravanti/kubernetes-the-hard-way-on-azure).
+It is a fork from [Kubernetes The Hard Way on Azure](https://github.com/ivanfioravanti/kubernetes-the-hard-way-on-azure) and has references from [Kubernetes The Hard Way On VirtualBox](https://github.com/mmumshad/kubernetes-the-hard-way).
 
-In this tutorial I have used [Docker](https://www.docker.com/) container run-time and [Weave](https://www.weave.works/docs/net/latest/kubernetes/kube-addon/) CNI. 
+In this tutorial I have used [Docker](https://www.docker.com/) container run-time and [Weave](https://www.weave.works/docs/net/latest/kubernetes/kube-addon/) CNI which is different from the original one. 
 
 Kubernetes The Hard Way is optimized for learning, which means taking the long route to ensure you understand each task required to bootstrap a Kubernetes cluster.
 
