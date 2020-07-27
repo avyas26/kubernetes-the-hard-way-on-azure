@@ -2,14 +2,24 @@
 
 In this lab we will provision a [PKI Infrastructure](https://en.wikipedia.org/wiki/Public_key_infrastructure) using OpenSSL, then use it to bootstrap a Certificate Authority, and generate TLS certificates for the following components: etcd, kube-apiserver, kubelet, and kube-proxy.
 
+We will be using the public static ip in the CSR request. Run the command below to fetch the public ip.
+
+```shell
+az network public-ip show -g kubernetes -n kubernetes-pip --query ipAddress -o tsv
+```
+
 # Client Machine
 
 We will be using master-1 virtual machine to generate the certificates and transfer them to other nodes as required.
 
 ```shell
-ssh kubeadmin@<-Public-IP-of-Master-1->
-kubeadmin@master-1:~$ mkdir certs
-kubeadmin@master-1:~$ cd certs
+ssh kubeadmin@$master1
+
+PIADDR=<-Replace-this-with-the-public-ip-fetched-above->
+{
+mkdir certs
+cd certs
+}
 ```
 
 ## Certificate Authority
@@ -23,7 +33,10 @@ openssl genrsa -out ca.key 2048
 openssl req -new -key ca.key -subj "/CN=KUBERNETES-CA" -out ca.csr
 openssl x509 -req -in ca.csr -signkey ca.key -CAcreateserial  -out ca.crt -days 1000
 }
+```
+> output
 
+```shell
 ls
 ca.crt  ca.csr  ca.key
 ```
@@ -42,7 +55,10 @@ openssl genrsa -out admin.key 2048
 openssl req -new -key admin.key -subj "/CN=admin/O=system:masters" -out admin.csr
 openssl x509 -req -in admin.csr -CA ca.crt -CAkey ca.key -CAcreateserial  -out admin.crt -days 1000
 }
+```
+> output
 
+```shell
 ls admin.*
 admin.crt  admin.csr  admin.key
 ```
@@ -50,16 +66,11 @@ admin.crt  admin.csr  admin.key
 
 Kubernetes uses a [special-purpose authorization mode](https://kubernetes.io/docs/admin/authorization/node/) called Node Authorizer, that specifically authorizes API requests made by [Kubelets](https://kubernetes.io/docs/concepts/overview/components/#kubelet). In order to be authorized by the Node Authorizer, Kubelets must use a credential that identifies them as being in the `system:nodes` group, with a username of `system:node:<nodeName>`. In this section you will create a certificate for each Kubernetes worker node that meets the Node Authorizer requirements.
 
-Generate a certificate and private key for each Kubernetes worker node:
+Generate a certificate and private key for each Kubernetes worker node. 
+
+> Generate config file:
 
 ```shell
-az network public-ip show -g kubernetes \
->   -n kubernetes-pip --query ipAddress -o tsv
-```
-
-```shell
-PIPADDR=<-Add-Public-IP-here->
-
 for i in 1 2; \
 do \
 cat > openssl-worker-$i.cnf <<EOF
@@ -74,10 +85,13 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = worker-$i
 IP.1 = 10.240.0.2$i
-IP.2 = ${external_ip}
+IP.2 = ${PIADDR}
 EOF
 done
+```
+> Generate key and cert:
 
+```shell
 for i in 1 2; \
 do \
 openssl genrsa -out worker-$i.key 2048
@@ -88,7 +102,10 @@ openssl req -new -key worker-$i.key -subj "/CN=system:node:worker-$i/O=system:no
 openssl x509 -req -in worker-$i.csr -CA ca.crt -CAkey ca.key -CAcreateserial  \
 -out worker-$i.crt -extensions v3_req -extfile openssl-worker-$i.cnf -days 1000; \
 done
+```
+> Output:
 
+```shell
 ls worker*
 
 worker-1.crt  worker-1.csr  worker-1.key  worker-2.crt  worker-2.csr  worker-2.key
@@ -104,7 +121,10 @@ openssl genrsa -out kube-controller-manager.key 2048
 openssl req -new -key kube-controller-manager.key -subj "/CN=system:kube-controller-manager" -out kube-controller-manager.csr
 openssl x509 -req -in kube-controller-manager.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out kube-controller-manager.crt -days 1000
 }
+```
+> Output:
 
+```shell
 ls kube-controller*
 kube-controller-manager.crt  kube-controller-manager.csr  kube-controller-manager.key
 ```
@@ -120,6 +140,9 @@ openssl req -new -key kube-proxy.key -subj "/CN=system:kube-proxy" -out kube-pro
 openssl x509 -req -in kube-proxy.csr -CA ca.crt -CAkey ca.key -CAcreateserial  -out kube-proxy.crt -days 1000
 }
 
+> Output:
+
+```shell
 ls kube-proxy*
 kube-proxy.crt  kube-proxy.csr  kube-proxy.key
 ```
@@ -135,6 +158,9 @@ openssl req -new -key kube-scheduler.key -subj "/CN=system:kube-scheduler" -out 
 openssl x509 -req -in kube-scheduler.csr -CA ca.crt -CAkey ca.key -CAcreateserial  -out kube-scheduler.crt -days 1000
 }
 
+> Output:
+
+```shell
 ls kube-scheduler*
 kube-scheduler.crt  kube-scheduler.csr  kube-scheduler.key
 ```
@@ -143,17 +169,9 @@ kube-scheduler.crt  kube-scheduler.csr  kube-scheduler.key
 
 The `kubernetes-pip` static IP address will be included in the list of subject alternative names for the Kubernetes API Server certificate. This will ensure the certificate can be validated by remote clients.
 
-Retrieve the `kubernetes-pip` static IP address. We had created this in [Provisioning Compute Resources](02-compute-resources.md#Kubernetes-Public-IP-Address) lab.
-
-```shell
-az network public-ip show -g kubernetes -n kubernetes-pip --query "ipAddress" -otsv
-```
-
 Create the Kubernetes API Server conf file:
 
 ```shell
-PIPADDR=<-Add-Public-IP-here->
-
 cat > openssl-kubeapiserver.cnf <<EOF
 [req]
 req_extensions = v3_req
@@ -171,7 +189,7 @@ DNS.4 = kubernetes.default.svc.cluster.local
 IP.1 = 10.32.0.1
 IP.2 = 10.240.0.11
 IP.3 = 10.240.0.12
-IP.4 = ${PIPADDR}
+IP.4 = ${PIADDR}
 IP.5 = 127.0.0.1
 EOF
 
@@ -189,7 +207,10 @@ openssl req -new -key kube-apiserver.key -subj "/CN=kube-apiserver" \
 openssl x509 -req -in kube-apiserver.csr -CA ca.crt -CAkey ca.key -CAcreateserial  \
 -out kube-apiserver.crt -extensions v3_req -extfile openssl-kubeapiserver.cnf -days 1000
 }
+```
+> Output:
 
+```shell
 ls kube-api*
 kube-apiserver.crt  kube-apiserver.csr  kube-apiserver.key
 ```
@@ -206,7 +227,10 @@ openssl genrsa -out service-account.key 2048
 openssl req -new -key service-account.key -subj "/CN=service-accounts" -out service-account.csr
 openssl x509 -req -in service-account.csr -CA ca.crt -CAkey ca.key -CAcreateserial  -out service-account.crt -days 1000
 }
+```
+> Output:
 
+```shell
 ls service-*
 service-account.crt  service-account.csr  service-account.key
 ```
@@ -234,8 +258,10 @@ for srv in master-2 worker-1 worker-2; \
 do \
 ssh ${srv} "hostname -s" ;\
 done
+```
+> Output:
 
-output:
+```shell
 master-2
 worker-1
 worker-2
