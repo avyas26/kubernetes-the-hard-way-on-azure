@@ -1,6 +1,21 @@
 # Installing the Client Tools
 
 In this lab we will use `master-1` server as our client machine to generate SSL certificates and kubeconfigs.
+Get the public Ip and connect to server.
+
+```shell
+master1=`az vm show -d -g kubernetes --name master-1 --query publicIps -o tsv | tr -d [:space:]`
+```
+```shell
+ssh kubeadmin@$master1
+```
+> output
+
+```shell
+kubeadmin@52.187.52.193's password:
+X11 forwarding request failed on channel 0
+[kubeadmin@master-1 ~]$
+```
 It should have OpenSSL installed by default. Verify if it's installed:
 
 ```shell
@@ -43,6 +58,7 @@ kubectl version --short
 
 ```shell
 Client Version: v1.18.6
+The connection to the server localhost:8080 was refused - did you specify the right host or port?
 ```
 
 Next: [Certificate Authority](04-certificate-authority.md)
