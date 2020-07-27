@@ -4,6 +4,24 @@ Kubernetes components are stateless and store cluster state in [etcd](https://gi
 
 ## Prerequisites
 
+Disable firewalld and set selinux to permissive on all the nodes.
+
+> Login to ```master-1``` and run the below command:
+
+```shell
+ssh kubeadmin@$master1
+
+{
+sudo setenforce 0
+sudo systemctl stop firewalld
+for srv in master-2 worker-1 worker-2; \
+do \
+ssh ${srv} "sudo setenforce 0"; \
+ssh ${srv} "sudo systemctl stop firewalld"; \
+done
+}
+```
+
 The commands in this lab must be run on each master node: `master-1` and `master-2`. Login to each master node using the `az` command to find its public IP and ssh to it. Example:
 
 ```shell
