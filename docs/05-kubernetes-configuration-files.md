@@ -24,12 +24,11 @@ Generate a kubeconfig file for each worker node:
 
 ```shell
 
-ssh kubeadmin@<Public-IP-of-Master-1->
-
-KUBERNETES_PUBLIC_ADDRESS=<-Public-IP-Generated-from-above-command->
+ssh kubeadmin@$master1
+PIADDR=<-Public-IP-Generated-from-above-command->
 {
+cd ~
 certs=/home/kubeadmin/certs
-
 mkdir kubeconfigs
 cd kubeconfigs
 
@@ -37,7 +36,7 @@ for instance in worker-1 worker-2; do
   kubectl config set-cluster kubernetes-the-hard-way \
     --certificate-authority=${certs}/ca.crt \
     --embed-certs=true \
-    --server=https://${KUBERNETES_PUBLIC_ADDRESS}:6443 \
+    --server=https://${PIADDR}:6443 \
     --kubeconfig=${instance}.kubeconfig
 
   kubectl config set-credentials system:node:${instance} \
@@ -68,7 +67,7 @@ Generate a kubeconfig file for the `kube-proxy` service:
 kubectl config set-cluster kubernetes-the-hard-way \
   --certificate-authority=${certs}/ca.crt \
   --embed-certs=true \
-  --server=https://${KUBERNETES_PUBLIC_ADDRESS}:6443 \
+  --server=https://${PIADDR}:6443 \
   --kubeconfig=kube-proxy.kubeconfig
 
 kubectl config set-credentials kube-proxy \
