@@ -4,7 +4,7 @@ In this lab you will deploy the [DNS add-on](https://kubernetes.io/docs/concepts
 
 ## The DNS Cluster Add-on
 
-Deploy the `coredns` cluster add-on:
+Deploy the `coredns` cluster add-on on ```master-1``` node:
 
 ```
 cat > coredns.yaml << EOF
@@ -230,7 +230,8 @@ kubectl get pods -l k8s-app=kube-dns -n kube-system
 
 ```
 NAME                       READY   STATUS    RESTARTS   AGE
-coredns-59845f77f8-b4x76   1/1     Running   0          15s
+coredns-59748948d4-6tvxm   1/1     Running   0          26s
+coredns-59748948d4-tl65g   1/1     Running   0          26s
 ```
 
 ## Verification
