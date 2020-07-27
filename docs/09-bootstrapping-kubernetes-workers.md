@@ -172,18 +172,18 @@ Install the worker binaries:
 ### For worker-1:
 ```shell
 {
-  sudo mv ~/certs/worker-1.key ~/certs/worker-1.crt /var/lib/kubelet/
-  sudo mv ~/kubeconfigs/worker-1.kubeconfig /var/lib/kubelet/kubeconfig
-  sudo mv ~/certs/ca.crt /var/lib/kubernetes/
+  sudo cp ~/certs/worker-1.key ~/certs/worker-1.crt /var/lib/kubelet/
+  sudo cp ~/kubeconfigs/worker-1.kubeconfig /var/lib/kubelet/kubeconfig
+  sudo cp ~/certs/ca.crt /var/lib/kubernetes/
 }
 ```
 
 ### For worker-2:
 ```shell
 {
-  sudo mv ~/certs/worker-2.key ~/certs/worker-2.crt /var/lib/kubelet/
-  sudo mv ~/kubeconfigs/worker-2.kubeconfig /var/lib/kubelet/kubeconfig
-  sudo mv ~/certs/ca.crt /var/lib/kubernetes/
+  sudo cp ~/certs/worker-2.key ~/certs/worker-2.crt /var/lib/kubelet/
+  sudo cp ~/kubeconfigs/worker-2.kubeconfig /var/lib/kubelet/kubeconfig
+  sudo cp ~/certs/ca.crt /var/lib/kubernetes/
 }
 ```
 
@@ -234,6 +234,7 @@ ExecStart=/usr/local/bin/kubelet \\
   --image-pull-progress-deadline=2m \\
   --kubeconfig=/var/lib/kubelet/kubeconfig \\
   --tls-cert-file=/var/lib/kubelet/worker-1.crt \\
+  --cgroup-driver=systemd \\
   --tls-private-key-file=/var/lib/kubelet/worker-1.key \\
   --network-plugin=cni \\
   --register-node=true \\
@@ -262,6 +263,7 @@ ExecStart=/usr/local/bin/kubelet \\
   --image-pull-progress-deadline=2m \\
   --kubeconfig=/var/lib/kubelet/kubeconfig \\
   --tls-cert-file=/var/lib/kubelet/worker-2.crt \\
+  --cgroup-driver=systemd \\
   --tls-private-key-file=/var/lib/kubelet/worker-2.key \\
   --cgroup-driver=systemd \\
   --network-plugin=cni \\
@@ -278,7 +280,7 @@ EOF
 ### Configure the Kubernetes Proxy
 
 ```shell
-sudo mv ~/kubeconfigs/kube-proxy.kubeconfig /var/lib/kube-proxy/kubeconfig
+sudo cp ~/kubeconfigs/kube-proxy.kubeconfig /var/lib/kube-proxy/kubeconfig
 ```
 
 Create the `kube-proxy-config.yaml` configuration file:
