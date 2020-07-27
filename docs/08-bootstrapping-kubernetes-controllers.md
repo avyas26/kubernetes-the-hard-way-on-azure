@@ -52,7 +52,7 @@ Install the Kubernetes binaries:
 {
   sudo mkdir -p /var/lib/kubernetes/
 
-  sudo mv ~/certs/ca.crt ~/certs/ca.key ~/certs/kube-apiserver.crt ~/certs/kube-apiserver.key \
+  sudo cp ~/certs/ca.crt ~/certs/ca.key ~/certs/kube-apiserver.crt ~/certs/kube-apiserver.key \
     ~/certs/service-account.crt ~/certs/service-account.key \
     ~/encryption-config.yaml /var/lib/kubernetes/
 }
@@ -116,7 +116,7 @@ EOF
 Move the `kube-controller-manager` kubeconfig into place:
 
 ```shell
-sudo mv ~/kubeconfigs/kube-controller-manager.kubeconfig /var/lib/kubernetes/
+sudo cp ~/kubeconfigs/kube-controller-manager.kubeconfig /var/lib/kubernetes/
 ```
 
 Create the `kube-controller-manager.service` systemd unit file:
@@ -155,7 +155,7 @@ EOF
 Move the `kube-scheduler` kubeconfig into place:
 
 ```shell
-sudo mv ~/kubeconfigs/kube-scheduler.kubeconfig /var/lib/kubernetes/
+sudo cp ~/kubeconfigs/kube-scheduler.kubeconfig /var/lib/kubernetes/
 ```
 
 Create the `kube-scheduler.yaml` configuration file:
@@ -279,7 +279,8 @@ EOF
 
 In this section we will provision an external load balancer to front the Kubernetes API Servers. The `kubernetes-pip` static IP address will be attached to the resulting load balancer.
 
-Create the load balancer health probe as a pre-requesite for the lb rule that follows.
+Create the load balancer health probe as a pre-requesite for the lb rule that follows. Run these commands on AZCLI terminal.
+
 ```shell
 az network lb probe create -g kubernetes --lb-name kubernetes-lb --name kubernetes-apiserver-probe --port 6443 --protocol tcp
 ```
@@ -300,11 +301,11 @@ Retrieve the `kubernetes-pip` static IP address:
 az network public-ip show -g kubernetes -n kubernetes-pip --query ipAddress -otsv
 ```
 
-Make a HTTP request for the Kubernetes version info:
+Make a HTTP request for the Kubernetes version info from ```master-1``` node:
 
 ```shell
-KUBERNETES_PUBLIC_IP_ADDRESS=<-Public-IP-from-above-command->
-curl --cacert /var/lib/kubernetes/ca.crt https://$KUBERNETES_PUBLIC_IP_ADDRESS:6443/version
+PIADDR=<-Public-IP-from-above-command->
+curl --cacert /var/lib/kubernetes/ca.crt https://$PIADDR:6443/version
 ```
 
 > output
