@@ -209,8 +209,7 @@ authorization:
   mode: Webhook
 clusterDomain: "cluster.local"
 clusterDNS:
-  - "10.32.0.10"
-podCIDR: "${POD_CIDR}"
+  - "10.96.0.10"
 resolvConf: "/etc/resolv.conf"
 runtimeRequestTimeout: "15m"
 EOF
