@@ -9,9 +9,13 @@ Run the below steps on MobaXterm CLI to copy the file and replace the IP.
 
 ```shell
 mkdir kubeconfigs
+
 master1ip=`az network public-ip show -g kubernetes -n master-1-pip --query "ipAddress" -otsv | tr -d '[:space:]'`
+
 scp kubeadmin@${master1ip}:/home/kubeadmin/kubeconfigs/admin.kubeconfig ./kubeconfigs/
+
 staticip=`az network public-ip show -g kubernetes -n kubernetes-pip --query ipAddress -otsv | tr -d '[:space:]'`
+
 sed -i "s/127.0.0.1/$staticip/g" ./kubeconfigs/admin.kubeconfig
 ```
 
@@ -22,6 +26,7 @@ Check the health of the remote Kubernetes cluster:
 ```shell
 kubectl get componentstatuses --kubeconfig=./kubeconfigs/admin.kubeconfig
 ```
+> If you get error ```command not found``` set the PATH variable for kubectl
 
 > output
 
