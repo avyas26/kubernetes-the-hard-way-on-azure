@@ -7,7 +7,9 @@ In Azure Free Trial there is a limit of 4 Cores available, therefore we will cre
 
 ### Install the Microsoft Azure CLI 2.0
 
-In this lab I will be using [MobaXterm](https://mobaxterm.mobatek.net/) to run the Azure CLI. Follow the [documentation](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-windows?view=azure-cli-latest&tabs=azure-cli) to Install Azure CLI on Windows.
+In this lab we will be using [MobaXterm](https://mobaxterm.mobatek.net/) to run the Azure CLI. Follow the [documentation](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-windows?view=azure-cli-latest&tabs=azure-cli) to Install Azure CLI on Windows.
+
+> MobaXterm has local terminal features that allow to run Unix commands on your local Windows computer [Start Local Terminal](https://mobaxterm.mobatek.net/documentation.html#2_2)
 
 Verify the Microsoft Azure CLI 2.0 version is 2.1.0 or higher:
 
@@ -27,7 +29,7 @@ az version
 }
 ```
 NOTE: If you face issues in launching the Azure CLI, check for PATH environment variable. It should have the CLI path set.
-      You can set it using the command ``` export PATH="$PATH:/drives/c/Program Files (x86)/Microsoft SDKs/Azure/CLI2/wbin" ```
+      For example: ``` export PATH="$PATH:/drives/c/Program Files (x86)/Microsoft SDKs/Azure/CLI2/wbin" ```
 
 ### Create a default Resource Group in a location
 
