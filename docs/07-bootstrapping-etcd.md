@@ -56,7 +56,7 @@ Extract and install the `etcd` server and the `etcdctl` command line utility:
 ```shell
 {
   sudo mkdir -p /etc/etcd /var/lib/etcd
-  sudo cp certs/ca.crt certs/kube-apiserver.crt certs/kube-apiserver.key /etc/etcd/
+  sudo cp ~/certs/ca.crt ~/certs/kube-apiserver.crt ~/certs/kube-apiserver.key /etc/etcd/
 }
 ```
 
