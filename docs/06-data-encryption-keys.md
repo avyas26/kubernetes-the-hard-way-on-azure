@@ -17,7 +17,7 @@ ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
 Create the `encryption-config.yaml` encryption config file:
 
 ```shell
-cat > encryption-config.yaml <<EOF
+cat > ~/encryption-config.yaml <<EOF
 kind: EncryptionConfig
 apiVersion: v1
 resources:
