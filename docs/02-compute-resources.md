@@ -24,57 +24,7 @@ az network vnet create -g kubernetes -n kubernetes-vnet \
 > The `10.240.0.0/24` IP address range can host up to 254 compute instances.
 
 ### Firewall Rules
-
-Create a firewall ([Network Security Group](https://docs.microsoft.com/azure/virtual-network/virtual-network-vnet-plan-design-arm#security)) ```kubernetes-nsg```
-
-```shell
-az network nsg create -g kubernetes -n kubernetes-nsg
-```
-Assign the NSG ```kubernetes-nsg``` to subnet ```kubernetes-subnet```
-
-```shell
-az network vnet subnet update -g kubernetes -n kubernetes-subnet \
---vnet-name kubernetes-vnet --network-security-group kubernetes-nsg
-```
-
-Create a firewall rule that allows all internal traffic and external SSH and HTTPS:
-
-```shell
-az network nsg rule create -g kubernetes -n kubernetes-allow-internal --access allow --destination-address-prefix "*" \
---destination-port-range "*" --direction inbound --nsg-name kubernetes-nsg --protocol "*" \
---source-address-prefix 10.240.0.0/24 10.200.0.0/16 --source-port-range "*" --priority 1000
-```
-
-```shell
-az network nsg rule create -g kubernetes -n kubernetes-allow-ssh --access allow --destination-address-prefix "*" \
---destination-port-range 22 --direction inbound --nsg-name kubernetes-nsg --protocol tcp --source-address-prefix "*" \
---source-port-range "*" --priority 1001
-```
-
-```shell
-az network nsg rule create -g kubernetes -n kubernetes-allow-api-server --access allow --destination-address-prefix "*" \
---destination-port-range 6443 --direction inbound --nsg-name kubernetes-nsg --protocol tcp --source-address-prefix "*" \
---source-port-range "*" --priority 1002
-```
-
-> An [external load balancer](https://docs.microsoft.com/azure/load-balancer/load-balancer-overview) will be used to expose the Kubernetes API Servers to remote clients.
-
-List the firewall rules in the `kubernetes-vnet` VNet network:
-
-```shell
-az network nsg rule list -g kubernetes --nsg-name kubernetes-nsg \
---query "[].{Name:name, Direction:direction, Priority:priority, Port:destinationPortRange}" -o table
-```
-
-> output
-
-```shell
-Name                         Direction    Priority    Port
----------------------------  -----------  ----------  ------
-kubernetes-allow-internal    Inbound      1000        *
-kubernetes-allow-ssh         Inbound      1001        22
-kubernetes-allow-api-server  Inbound      1002        6443
-```
+We won't be creating any firewall rules in this lab to keep it simple.
 
 ### Kubernetes Public IP Address
 
@@ -111,8 +61,10 @@ az vm image list --location southeastasia --publisher redhat --offer RHEL --sku 
 
 ```shell
 RHEL=RedHat:RHEL:7.8:7.8.2020050910
-
 echo $RHEL
+```
+> output:
+```shell
 RedHat:RHEL:7.8:7.8.2020050910
 ```
 
@@ -161,14 +113,28 @@ Create two compute instances which will host the Kubernetes worker nodes in `wor
 ```shell
 az vm availability-set create -g kubernetes -n worker-as
 ```
-> Create public IPs, NIC and VMs
+> Create public IPs
 
 ```shell
 for i in 1 2; \
 do \
-az network public-ip create -n worker-$i-pip -g kubernetes
+az network public-ip create -n worker-$i-pip -g kubernetes; \
+done
+```
+> Create NIC
+
+```shell
+for i in 1 2; \
+do \
 az network nic create -g kubernetes -n worker-$i-nic --private-ip-address 10.240.0.2$i \
---public-ip-address worker-$i-pip --vnet kubernetes-vnet --subnet kubernetes-subnet --ip-forwarding
+--public-ip-address worker-$i-pip --vnet kubernetes-vnet --subnet kubernetes-subnet --ip-forwarding; \
+done
+```
+> Create virtual machines
+
+```shell
+for i in 1 2; \
+do \
 az vm create -g kubernetes -n worker-$i --image $RHEL --nics worker-$i-nic --tags pod-cidr=10.200.${i}.0/24 \
 --availability-set worker-as --nsg '' --admin-username "kubeadmin" --admin-password "kubeadmin@123"; \
 done
@@ -194,17 +160,44 @@ worker-2  kubernetes       VM running    xx.xx.x.xxx             southeastasia
 ```
 SSH to the instances:
 
+> Get the Public IPs
+
 ```shell
+for i in 1 2; \
+do \
+az vm show -d -g kubernetes --name master-$i --query publicIps -o tsv | tr -d [:space:] >> ips.txt; \
+echo " " >> ips.txt ;\
+az vm show -d -g kubernetes --name worker-$i --query publicIps -o tsv | tr -d [:space:] >> ips.txt; \
+echo " " >> ips.txt; \
+done
+```
+> Login to server
 
-for ip in <-Public-IP-Master-1-> <-Public-IP-Master-2-> <-Public-IP-Worker-1-> <-Public-IP-Worker-2->
-> do
-> ssh kubeadmin@$ip "hostname -s"
-> done
+```shell
+for ip in `cat ips.txt`; \
+do \
+ssh kubeadmin@$ip "hostname -s" ;\
+done
+```
+
+> output
+
+```shell
+kubeadmin@xx.xxx.xxx.xx's password:
+X11 forwarding request failed on channel 0
 master-1
-master-2
+Warning: Permanently added 'xx.xxx.xxx.xx' (RSA) to the list of known hosts.
+kubeadmin@xx.xxx.xxx.xx's password:
+X11 forwarding request failed on channel 0
 worker-1
+Warning: Permanently added 'xx.xxx.xxx.xx' (RSA) to the list of known hosts.
+kubeadmin@xx.xxx.xxx.xx's password:
+X11 forwarding request failed on channel 0
+master-2
+Warning: Permanently added 'xx.xxx.xxx.xx' (RSA) to the list of known hosts.
+kubeadmin@xx.xxx.xxx.xx's password:
+X11 forwarding request failed on channel 0
 worker-2
-
 ```
 
 Next: [Installing the Client Tools](03-client-tools.md)
