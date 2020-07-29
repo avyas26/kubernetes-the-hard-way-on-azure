@@ -177,20 +177,21 @@ NODE_PORT=$(kubectl get svc nginx \
   --output=jsonpath='{range .spec.ports[0]}{.nodePort}')
 ```
 
-Retrieve the worker node assigned to nginx pod and then retreive external IP address of that worker instance:
+Retrieve the worker node assigned to nginx pod and then retreive external IP address of that worker instance from AZCLI:
 
 ```shell
 kubectl get pods -l app=nginx --output=jsonpath='{.items[*].spec.nodeName}'
 ```
 
 ```shell
-EXTERNAL_IP=$(az network public-ip show -g kubernetes \
-  -n worker-0-pip --query "ipAddress" -otsv)
+az network public-ip show -g kubernetes \
+  -n worker-1-pip --query "ipAddress" -otsv
 ```
 
 Make an HTTP request using the external IP address and the `nginx` node port:
 
 ```shell
+EXTERNAL_IP=<-IP-fetched-from-above-cmd->
 curl -I http://$EXTERNAL_IP:$NODE_PORT
 ```
 
@@ -208,4 +209,4 @@ ETag: "5e26fe48-264"
 Accept-Ranges: bytes
 ```
 
-Next: [Dashboard Configuration](14-dashboard.md)
+Next: [Cleaning Up](14-cleanup.md)
