@@ -1,43 +1,22 @@
 # Configuring kubectl for Remote Access
 
-In this lab you will generate a kubeconfig file for the `kubectl` command line utility based on the `admin` user credentials.
+Till now we have been using ```master-1``` as our administrative machine. Now that the cluster services are up and running we can query it using ```kubectl``` installed on local machine or laptop. Clik the link for steps to install [kubectl on Windows](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
-> Run the commands in this lab from the same directory used to generate the admin client certificates.
+In order to access the cluster we will need to copy admin.kubeconfig file from ```master-1``` server to local machine or laptop.
+Run the below steps on MobaXterm CLI to copy the file and replace the IP.
 
 ## The Admin Kubernetes Configuration File
 
-Each kubeconfig requires a Kubernetes API Server to connect to. To support high availability the IP address assigned to the external load balancer fronting the Kubernetes API Servers will be used.
-
-Retrieve the `kubernetes-the-hard-way` static IP address:
-
 ```shell
-KUBERNETES_PUBLIC_ADDRESS=$(az network public-ip show -g kubernetes \
-  -n kubernetes-pip --query ipAddress -otsv)
-```
+mkdir kubeconfigs
 
-Generate a kubeconfig file suitable for authenticating as the `admin` user:
+master1ip=`az network public-ip show -g kubernetes -n master-1-pip --query "ipAddress" -otsv | tr -d '[:space:]'`
 
-```shell
-kubectl config set-cluster kubernetes-the-hard-way \
-  --certificate-authority=ca.pem \
-  --embed-certs=true \
-  --server=https://${KUBERNETES_PUBLIC_ADDRESS}:6443
-```
+scp kubeadmin@${master1ip}:/home/kubeadmin/kubeconfigs/admin.kubeconfig ./kubeconfigs/
 
-```shell
-kubectl config set-credentials admin \
-  --client-certificate=admin.pem \
-  --client-key=admin-key.pem
-```
+staticip=`az network public-ip show -g kubernetes -n kubernetes-pip --query ipAddress -otsv | tr -d '[:space:]'`
 
-```shell
-kubectl config set-context kubernetes-the-hard-way \
-  --cluster=kubernetes-the-hard-way \
-  --user=admin
-```
-
-```shell
-kubectl config use-context kubernetes-the-hard-way
+sed -i "s/127.0.0.1/$staticip/g" ./kubeconfigs/admin.kubeconfig
 ```
 
 ## Verification
@@ -45,31 +24,33 @@ kubectl config use-context kubernetes-the-hard-way
 Check the health of the remote Kubernetes cluster:
 
 ```shell
-kubectl get componentstatuses
+kubectl get componentstatuses --kubeconfig=./kubeconfigs/admin.kubeconfig
 ```
+> If you get error ```command not found``` set the PATH variable for kubectl
 
 > output
 
 ```shell
-NAME                 STATUS    MESSAGE              ERROR
-controller-manager   Healthy   ok
+NAME                 STATUS    MESSAGE             ERROR
 scheduler            Healthy   ok
-etcd-0               Healthy   {"health": "true"}
-etcd-1               Healthy   {"health": "true"}
+controller-manager   Healthy   ok
+etcd-0               Healthy   {"health":"true"}
+etcd-1               Healthy   {"health":"true"}
 ```
 
 List the nodes in the remote Kubernetes cluster:
 
 ```shell
-kubectl get nodes
+kubectl get nodes --kubeconfig=./kubeconfigs/admin.kubeconfig
 ```
 
 > output
 
 ```shell
-NAME       STATUS   ROLES    AGE   VERSION
-worker-0   Ready    <none>   66s   v1.17.3
-worker-1   Ready    <none>   62s   v1.17.3
+NAME       STATUS     ROLES    AGE   VERSION
+worker-1   NotReady   <none>   40m   v1.18.6
+worker-2   NotReady   <none>   39m   v1.18.6
 ```
+Note: Worker nodes will move to `Ready` state after we deploy networking solution.
 
-Next: [Provisioning Pod Network Routes](11-pod-network-routes.md)
+Next: [Deploy Pod Networking Solution](11-Deploy-networking-solution.md)

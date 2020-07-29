@@ -1,51 +1,149 @@
 # Bootstrapping the Kubernetes Worker Nodes
 
-In this lab you will bootstrap two Kubernetes worker nodes. The following components will be installed on each node: [runc](https://github.com/opencontainers/runc), [container networking plugins](https://github.com/containernetworking/cni), [cri-containerd](https://github.com/containerd/cri), [kubelet](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/), and [kube-proxy](https://kubernetes.io/docs/concepts/cluster-administration/proxies/).
+In this lab we will bootstrap two Kubernetes worker nodes. The following components will be installed on each node: [docker](https://docker.io), [kubelet](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/), and [kube-proxy](https://kubernetes.io/docs/concepts/cluster-administration/proxies/).
 
 ## Prerequisites
 
-The commands in this lab must be run on each worker instance: `worker-0` and `worker-1`.
-Azure Instance Metadata Service cannot be used to set custom property. We have used *tags* on each worker VM to defined POD-CIDR used later.
-
-Login to each worker instance using the `az` command to find its public IP and ssh to it. Example:
+The commands in this lab must be run on each worker node: `worker-1` and `worker-2`.
+Retrieve the public IP of each worker instance using the `az` command:
 
 ```shell
-WORKER="worker-0"
-PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-  -n ${WORKER}-pip --query "ipAddress" -otsv)
-
-ssh kuberoot@${PUBLIC_IP_ADDRESS}
+for i in 1 2; \
+do \
+az network public-ip show -g kubernetes -n worker-$i-pip --query "ipAddress" -otsv; \
+done
 ```
 
 ### Running commands in parallel with tmux
 
-[tmux](https://github.com/tmux/tmux/wiki) can be used to run commands on multiple compute instances at the same time. See the [Running commands in parallel with tmux](01-prerequisites.md#running-commands-in-parallel-with-tmux) section in the Prerequisites lab.
+You can use the [Multi-execution](https://mobaxterm.mobatek.net/features.html) feature of MobaXterm
 
 ## Provisioning a Kubernetes Worker Node
 
-Install the OS dependencies:
+Install dependencies:
 
 ```shell
 {
-  sudo apt-get update
-  sudo apt-get -y install socat conntrack ipset
+sudo yum -y update
+sudo yum -y install socat conntrack ipset
 }
 ```
 
-> The socat binary enables support for the `kubectl port-forward` command.
+Install docker:
+
+```shell
+{
+sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+sudo yum-config-manager --add-repo \
+  https://download.docker.com/linux/centos/docker-ce.repo
+}
+
+sudo -i
+
+{
+yum update -y && yum install -y \
+  containerd.io-1.2.13 \
+  docker-ce-19.03.11 \
+  docker-ce-cli-19.03.11
+mkdir /etc/docker
+}
+
+exit
+
+{
+cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2",
+  "storage-opts": [
+    "overlay2.override_kernel_check=true"
+  ]
+}
+EOF
+sudo mkdir -p /etc/systemd/system/docker.service.d
+sudo systemctl daemon-reload
+sudo systemctl enable docker
+sudo systemctl start docker
+}
+```
+
+> Verify docker installation and check the version:
+
+```shell
+{
+  sudo docker version
+  sudo docker run hello-world
+}
+```
+> Ouput
+
+```shell
+Client: Docker Engine - Community
+ Version:           19.03.11
+ API version:       1.40
+ Go version:        go1.13.10
+ Git commit:        42e35e61f3
+ Built:             Mon Jun  1 09:13:48 2020
+ OS/Arch:           linux/amd64
+ Experimental:      false
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          19.03.11
+  API version:      1.40 (minimum version 1.12)
+  Go version:       go1.13.10
+  Git commit:       42e35e61f3
+  Built:            Mon Jun  1 09:12:26 2020
+  OS/Arch:          linux/amd64
+  Experimental:     false
+ containerd:
+  Version:          1.2.13
+  GitCommit:        7ad184331fa3e55e52b890ea95e65ba581ae3429
+ runc:
+  Version:          1.0.0-rc10
+  GitCommit:        dc9208a3303feef5b3839f4323d9beb36df0a9dd
+ docker-init:
+  Version:          0.18.0
+  GitCommit:        fec3683
+Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+0e03bdcc26d7: Pull complete
+Digest: sha256:49a1c8800c94df04e9658809b006fd8a686cab8028d33cfba2cc049724254202
+Status: Downloaded newer image for hello-world:latest
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+    (amd64)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+To try something more ambitious, you can run an Ubuntu container with:
+ $ docker run -it ubuntu bash
+
+Share images, automate workflows, and more with a free Docker ID:
+ https://hub.docker.com/
+
+For more examples and ideas, visit:
+ https://docs.docker.com/get-started/
+```
 
 ### Download and Install Worker Binaries
 
 ```shell
-wget -q --show-progress --https-only --timestamping \
-  https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.17.0/crictl-v1.17.0-linux-amd64.tar.gz \
-  https://storage.googleapis.com/gvisor/releases/nightly/latest/runsc \
-  https://github.com/opencontainers/runc/releases/download/v1.0.0-rc10/runc.amd64\
-  https://github.com/containernetworking/plugins/releases/download/v0.8.5/cni-plugins-linux-amd64-v0.8.5.tgz \
-  https://github.com/containerd/containerd/releases/download/v1.3.2/containerd-1.3.2.linux-amd64.tar.gz \
-  https://storage.googleapis.com/kubernetes-release/release/v1.17.3/bin/linux/amd64/kubectl \
-  https://storage.googleapis.com/kubernetes-release/release/v1.17.3/bin/linux/amd64/kube-proxy \
-  https://storage.googleapis.com/kubernetes-release/release/v1.17.3/bin/linux/amd64/kubelet
+wget --progress=bar --timestamping \
+  https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl \
+  https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kube-proxy \
+  https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubelet
 ```
 
 Create the installation directories:
@@ -64,123 +162,36 @@ Install the worker binaries:
 
 ```shell
 {
-  sudo mv runc.amd64 runc
-  chmod +x kubectl kube-proxy kubelet runc runsc
-  sudo mv kubectl kube-proxy kubelet runc runsc /usr/local/bin/
-  sudo tar -xvf crictl-v1.17.0-linux-amd64.tar.gz -C /usr/local/bin/
-  sudo tar -xvf cni-plugins-linux-amd64-v0.8.5.tgz -C /opt/cni/bin/
-  sudo tar -xvf containerd-1.3.2.linux-amd64.tar.gz -C /
+  chmod +x kubectl kube-proxy kubelet
+  sudo mv kubectl kube-proxy kubelet /usr/local/bin/
 }
-```
-
-### Configure CNI Networking
-
-Create the `bridge` network configuration file replacing POD_CIDR with address retrieved initially from Azure VM tags:
-
-> Note: the [Azure Instance Metadata Service](https://docs.microsoft.com/azure/virtual-machines/windows/instance-metadata-service) is used to retrieve the POD_CIDR tag for each worker.
-
-```shell
-POD_CIDR="$(echo $(curl --silent -H Metadata:true "http://169.254.169.254/metadata/instance/compute/tags?api-version=2017-08-01&format=text") | cut -d : -f2)"
-cat <<EOF | sudo tee /etc/cni/net.d/10-bridge.conf
-{
-    "cniVersion": "0.3.0",
-    "name": "bridge",
-    "type": "bridge",
-    "bridge": "cnio0",
-    "isGateway": true,
-    "ipMasq": true,
-    "ipam": {
-        "type": "host-local",
-        "ranges": [
-          [{"subnet": "${POD_CIDR}"}]
-        ],
-        "routes": [{"dst": "0.0.0.0/0"}]
-    }
-}
-EOF
-```
-
-Create the `loopback` network configuration file:
-
-```shell
-cat <<EOF | sudo tee /etc/cni/net.d/99-loopback.conf
-{
-    "cniVersion": "0.3.0",
-    "name": "lo",
-    "type": "loopback"
-}
-EOF
-```
-
-### Configure containerd
-
-Create the `containerd` configuration file:
-
-```shell
-sudo mkdir -p /etc/containerd/
-```
-
-```shell
-cat << EOF | sudo tee /etc/containerd/config.toml
-[plugins]
-  [plugins.cri.containerd]
-    snapshotter = "overlayfs"
-    [plugins.cri.containerd.default_runtime]
-      runtime_type = "io.containerd.runtime.v1.linux"
-      runtime_engine = "/usr/local/bin/runc"
-      runtime_root = ""
-    [plugins.cri.containerd.untrusted_workload_runtime]
-      runtime_type = "io.containerd.runtime.v1.linux"
-      runtime_engine = "/usr/local/bin/runsc"
-      runtime_root = "/run/containerd/runsc"
-    [plugins.cri.containerd.gvisor]
-      runtime_type = "io.containerd.runtime.v1.linux"
-      runtime_engine = "/usr/local/bin/runsc"
-      runtime_root = "/run/containerd/runsc"
-EOF
-```
-
-> Untrusted workloads will be run using the gVisor (runsc) runtime.
-
-Create the `containerd.service` systemd unit file:
-
-```shell
-cat <<EOF | sudo tee /etc/systemd/system/containerd.service
-[Unit]
-Description=containerd container runtime
-Documentation=https://containerd.io
-After=network.target
-
-[Service]
-ExecStartPre=/sbin/modprobe overlay
-ExecStart=/bin/containerd
-
-Delegate=yes
-KillMode=process
-# Having non-zero Limit*s causes performance problems due to accounting overhead
-# in the kernel. We recommend using cgroups to do container-local accounting.
-LimitNPROC=infinity
-LimitCORE=infinity
-LimitNOFILE=infinity
-# Comment TasksMax if your systemd version does not supports it.
-# Only systemd 226 and above support this version.
-TasksMax=infinity
-
-[Install]
-WantedBy=multi-user.target
-EOF
 ```
 
 ### Configure the Kubelet
 
+### For worker-1:
 ```shell
 {
-  sudo mv ${HOSTNAME}-key.pem ${HOSTNAME}.pem /var/lib/kubelet/
-  sudo mv ${HOSTNAME}.kubeconfig /var/lib/kubelet/kubeconfig
-  sudo mv ca.pem /var/lib/kubernetes/
+  sudo cp ~/certs/worker-1.key ~/certs/worker-1.crt /var/lib/kubelet/
+  sudo cp ~/kubeconfigs/worker-1.kubeconfig /var/lib/kubelet/kubeconfig
+  sudo cp ~/certs/ca.crt /var/lib/kubernetes/
 }
 ```
 
+### For worker-2:
+```shell
+{
+  sudo cp ~/certs/worker-2.key ~/certs/worker-2.crt /var/lib/kubelet/
+  sudo cp ~/kubeconfigs/worker-2.kubeconfig /var/lib/kubelet/kubeconfig
+  sudo cp ~/certs/ca.crt /var/lib/kubernetes/
+}
+```
+
+> Remember to run the below commands on each worker node: `worker-1` and `worker-2`.
+
+```shell
+POD_CIDR="$(echo $(curl --silent -H Metadata:true "http://169.254.169.254/metadata/instance/compute/tags?api-version=2019-06-01&format=text") | cut -d : -f2)"
+```
 Create the `kubelet-config.yaml` configuration file:
 
 ```shell
@@ -193,23 +204,20 @@ authentication:
   webhook:
     enabled: true
   x509:
-    clientCAFile: "/var/lib/kubernetes/ca.pem"
+    clientCAFile: "/var/lib/kubernetes/ca.crt"
 authorization:
   mode: Webhook
 clusterDomain: "cluster.local"
 clusterDNS:
-  - "10.32.0.10"
-podCIDR: "${POD_CIDR}"
-resolvConf: "/run/systemd/resolve/resolv.conf"
+  - "10.96.0.10"
+resolvConf: "/etc/resolv.conf"
 runtimeRequestTimeout: "15m"
-tlsCertFile: "/var/lib/kubelet/${HOSTNAME}.pem"
-tlsPrivateKeyFile: "/var/lib/kubelet/${HOSTNAME}-key.pem"
 EOF
 ```
 
 > The `resolvConf` configuration is used to avoid loops when using CoreDNS for service discovery on systems running `systemd-resolved`.
 
-Create the `kubelet.service` systemd unit file:
+Create the `kubelet.service` systemd unit file for worker-1:
 
 ```shell
 cat <<EOF | sudo tee /etc/systemd/system/kubelet.service
@@ -222,10 +230,41 @@ Requires=containerd.service
 [Service]
 ExecStart=/usr/local/bin/kubelet \\
   --config=/var/lib/kubelet/kubelet-config.yaml \\
-  --container-runtime=remote \\
-  --container-runtime-endpoint=unix:///var/run/containerd/containerd.sock \\
   --image-pull-progress-deadline=2m \\
   --kubeconfig=/var/lib/kubelet/kubeconfig \\
+  --tls-cert-file=/var/lib/kubelet/worker-1.crt \\
+  --cgroup-driver=systemd \\
+  --tls-private-key-file=/var/lib/kubelet/worker-1.key \\
+  --network-plugin=cni \\
+  --register-node=true \\
+  --v=2
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+Create the `kubelet.service` systemd unit file for worker-2:
+
+```shell
+cat <<EOF | sudo tee /etc/systemd/system/kubelet.service
+[Unit]
+Description=Kubernetes Kubelet
+Documentation=https://github.com/kubernetes/kubernetes
+After=containerd.service
+Requires=containerd.service
+
+[Service]
+ExecStart=/usr/local/bin/kubelet \\
+  --config=/var/lib/kubelet/kubelet-config.yaml \\
+  --image-pull-progress-deadline=2m \\
+  --kubeconfig=/var/lib/kubelet/kubeconfig \\
+  --tls-cert-file=/var/lib/kubelet/worker-2.crt \\
+  --cgroup-driver=systemd \\
+  --tls-private-key-file=/var/lib/kubelet/worker-2.key \\
+  --cgroup-driver=systemd \\
   --network-plugin=cni \\
   --register-node=true \\
   --v=2
@@ -240,7 +279,7 @@ EOF
 ### Configure the Kubernetes Proxy
 
 ```shell
-sudo mv kube-proxy.kubeconfig /var/lib/kube-proxy/kubeconfig
+sudo cp ~/kubeconfigs/kube-proxy.kubeconfig /var/lib/kube-proxy/kubeconfig
 ```
 
 Create the `kube-proxy-config.yaml` configuration file:
@@ -280,26 +319,13 @@ EOF
 ```shell
 {
   sudo systemctl daemon-reload
-  sudo systemctl enable containerd kubelet kube-proxy
-  sudo systemctl start containerd kubelet kube-proxy
+  sudo systemctl enable kubelet kube-proxy
+  sudo systemctl start kubelet kube-proxy
 }
 ```
-
-> Remember to run the above commands on each worker node: `worker-0` and `worker-1`.
-
 ## Verification
 
-Login to one of the controller nodes:
-
-```shell
-CONTROLLER="controller-0"
-PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-  -n ${CONTROLLER}-pip --query "ipAddress" -otsv)
-
-ssh kuberoot@${PUBLIC_IP_ADDRESS}
-```
-
-List the registered Kubernetes nodes:
+Login to `master-1` node and list the registered Kubernetes nodes:
 
 ```shell
 kubectl get nodes
@@ -308,9 +334,9 @@ kubectl get nodes
 > output
 
 ```shell
-NAME       STATUS   ROLES    AGE   VERSION
-worker-0   Ready    <none>   17s   v1.17.3
-worker-1   Ready    <none>   13s   v1.17.3
+NAME       STATUS     ROLES    AGE   VERSION
+worker-1   NotReady   <none>   61s   v1.18.6
+worker-2   NotReady   <none>   9s    v1.18.6
 ```
 
 Next: [Configuring kubectl for Remote Access](10-configuring-kubectl.md)

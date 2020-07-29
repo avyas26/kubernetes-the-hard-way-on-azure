@@ -6,6 +6,8 @@ In this lab you will complete a series of tasks to ensure your Kubernetes cluste
 
 In this section you will verify the ability to [encrypt secret data at rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/#verifying-that-data-is-encrypted).
 
+Run below commands on ```master-1``` node
+
 Create a generic secret:
 
 ```shell
@@ -16,12 +18,7 @@ kubectl create secret generic kubernetes-the-hard-way \
 Print a hexdump of the `kubernetes-the-hard-way` secret stored in etcd:
 
 ```shell
-CONTROLLER="controller-0"
-PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-  -n ${CONTROLLER}-pip --query "ipAddress" -otsv)
-
-ssh kuberoot@${PUBLIC_IP_ADDRESS} \
-  "ETCDCTL_API=3 etcdctl get /registry/secrets/default/kubernetes-the-hard-way | hexdump -C"
+ETCDCTL_API=3 etcdctl get /registry/secrets/default/kubernetes-the-hard-way | hexdump -C
 ```
 
 > output
@@ -31,19 +28,24 @@ ssh kuberoot@${PUBLIC_IP_ADDRESS} \
 00000010  73 2f 64 65 66 61 75 6c  74 2f 6b 75 62 65 72 6e  |s/default/kubern|
 00000020  65 74 65 73 2d 74 68 65  2d 68 61 72 64 2d 77 61  |etes-the-hard-wa|
 00000030  79 0a 6b 38 73 3a 65 6e  63 3a 61 65 73 63 62 63  |y.k8s:enc:aescbc|
-00000040  3a 76 31 3a 6b 65 79 31  3a 65 c3 db a8 fb ae 9b  |:v1:key1:e......|
-00000050  f9 09 59 0b 12 fa 4f 5d  4c 6c c5 35 28 d8 72 08  |..Y...O]Ll.5(.r.|
-00000060  f7 9e 4b 0a 6e 1d 6b 27  8f d2 7f 36 2b 11 6b 61  |..K.n.k'...6+.ka|
-00000070  53 6a a7 24 56 e2 19 ee  e7 04 94 ee b3 9c d3 c3  |Sj.$V...........|
-00000080  68 b5 b8 51 8b 01 4e d9  f0 ce 40 9a 73 5c 10 28  |h..Q..N...@.s\.(|
-00000090  18 bc ff 3a 51 4d bc 0c  6d 27 97 5c c6 bd a2 35  |...:QM..m'.\...5|
-000000a0  88 18 56 16 c7 10 12 a1  e2 cf c5 62 6c 50 7e 67  |..V........blP~g|
-000000b0  89 0c 42 56 73 69 48 bf  24 5e 91 91 56 2d 64 2f  |..BVsiH.$^..V-d/|
-000000c0  3a 35 b9 c9 08 41 d6 95  62 e8 1b 35 80 c9 8e 74  |:5...A..b..5...t|
-000000d0  79 34 bc 5b 7c 68 cd 0c  bc 11 21 c0 48 bc 92 a6  |y4.[|h....!.H...|
-000000e0  2f b5 ef 18 5c f1 00 16  19 22 e8 9c c1 8c 3c 35  |/...\...."....<5|
-000000f0  fa b3 87 51 85 bf f0 cd  0e 0a                    |...Q......|
-000000fa
+00000040  3a 76 31 3a 6b 65 79 31  3a 90 5b ef e3 71 42 f5  |:v1:key1:.[..qB.|
+00000050  d8 81 88 cb 2c 40 07 96  09 1f 39 03 91 92 47 bd  |....,@....9...G.|
+00000060  24 b4 b8 5a c6 1c 71 5e  ef 5c 74 bf 9c df 8d da  |$..Z..q^.\t.....|
+00000070  ca 98 ec bc d8 0c 1e b6  c5 f9 41 07 47 b7 6c 7a  |..........A.G.lz|
+00000080  2d 04 f2 65 b7 15 d6 b9  9e ba c5 2b 57 2d be 52  |-..e.......+W-.R|
+00000090  45 57 c6 bd 26 86 6f 18  43 73 33 13 55 b2 e6 64  |EW..&.o.Cs3.U..d|
+000000a0  14 6f 2b 6a 8a 03 bd 27  40 9a 7d 59 9a 42 8c 9b  |.o+j...'@.}Y.B..|
+000000b0  ab 0e 56 1b 6a d8 78 9c  48 70 08 94 3f 35 c1 7c  |..V.j.x.Hp..?5.||
+000000c0  61 d8 71 5b 26 92 ba 2c  e3 ac d1 16 f2 a2 c7 84  |a.q[&..,........|
+000000d0  29 2b 87 8f 47 46 74 c4  13 0a 12 e4 b7 e0 19 55  |)+..GFt........U|
+000000e0  95 b7 d8 81 64 27 04 ec  b6 a5 2b 9a d8 9f 36 1e  |....d'....+...6.|
+000000f0  b5 b8 6f 64 f2 32 18 40  e7 68 a3 14 5c de c5 92  |..od.2.@.h..\...|
+00000100  1e 9a ed e9 f6 fc e1 82  c8 ca 00 76 8f 7e 10 f4  |...........v.~..|
+00000110  e7 af 8b 73 19 16 12 87  e6 21 f3 8d d7 2c f1 e1  |...s.....!...,..|
+00000120  9d bb ea 35 c8 fd e2 83  f1 15 c5 5c 1e cc 06 76  |...5.......\...v|
+00000130  7e 97 7f 41 c4 ae 5c 41  b6 93 33 8b e3 f5 82 28  |~..A..\A..3....(|
+00000140  7d 0d 7a e7 69 4b c4 31  4d 0a                    |}.z.iK.1M.|
+0000014a
 ```
 
 The etcd key should be prefixed with `k8s:enc:aescbc:v1:key1`, which indicates the `aescbc` provider was used to encrypt the data with the `key1` encryption key.
@@ -55,20 +57,21 @@ In this section you will verify the ability to create and manage [Deployments](h
 Create a deployment for the [nginx](https://nginx.org/en/) web server:
 
 ```shell
-kubectl run --generator=run-pod/v1 nginx --image=nginx
+kubectl create deployment nginx --image=nginx
 ```
 
 List the pod created by the `nginx` deployment:
 
 ```shell
-kubectl get pods -l run=nginx
+kubectl get pods
 ```
 
 > output
 
 ```shell
-NAME    READY   STATUS    RESTARTS   AGE
-nginx   1/1     Running   0          19s
+NAME                    READY   STATUS    RESTARTS   AGE
+busybox                 1/1     Running   0          7m18s
+nginx-f89759699-fqc7f   1/1     Running   0          22s
 ```
 
 ### Port Forwarding
@@ -78,48 +81,48 @@ In this section you will verify the ability to access applications remotely usin
 Retrieve the full name of the `nginx` pod:
 
 ```shell
-POD_NAME=$(kubectl get pods -l run=nginx -o jsonpath="{.items[0].metadata.name}")
+POD_NAME=$(kubectl get pods -l app=nginx -o jsonpath="{.items[0].metadata.name}")
 ```
 
 Forward port `8080` on your local machine to port `80` of the `nginx` pod:
 
 ```shell
-kubectl port-forward $POD_NAME 8080:80
+kubectl port-forward $POD_NAME 8082:80
 ```
 
 > output
 
 ```shell
-Forwarding from 127.0.0.1:8080 -> 80
-Forwarding from [::1]:8080 -> 80
+Forwarding from 127.0.0.1:8082 -> 80
+Forwarding from [::1]:8082 -> 80
 ```
 
 In a new terminal make an HTTP request using the forwarding address:
 
 ```shell
-curl --head http://127.0.0.1:8080
+curl --head http://127.0.0.1:8082
 ```
 
 > output
 
 ```shell
 HTTP/1.1 200 OK
-Server: nginx/1.17.8
-Date: Sun, 23 Feb 2020 12:15:34 GMT
+Server: nginx/1.19.1
+Date: Sun, 26 Jul 2020 11:50:11 GMT
 Content-Type: text/html
 Content-Length: 612
-Last-Modified: Tue, 21 Jan 2020 13:36:08 GMT
+Last-Modified: Tue, 07 Jul 2020 15:52:25 GMT
 Connection: keep-alive
-ETag: "5e26fe48-264"
+ETag: "5f049a39-264"
 Accept-Ranges: bytes
 ```
 
 Switch back to the previous terminal and stop the port forwarding to the `nginx` pod:
 
 ```shell
-Forwarding from 127.0.0.1:8080 -> 80
-Forwarding from [::1]:8080 -> 80
-Handling connection for 8080
+Forwarding from 127.0.0.1:8082 -> 80
+Forwarding from [::1]:8082 -> 80
+Handling connection for 8082
 ^C
 ```
 
@@ -136,7 +139,7 @@ kubectl logs $POD_NAME
 > output
 
 ```shell
-127.0.0.1 - - [23/Feb/2020:12:15:34 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/7.68.0" "-"
+127.0.0.1 - - [26/Jul/2020:11:50:11 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/7.29.0" "-"
 ```
 
 ### Exec
@@ -152,7 +155,7 @@ kubectl exec -ti $POD_NAME -- nginx -v
 > output
 
 ```shell
-nginx version: nginx/1.17.8
+nginx version: nginx/1.19.1
 ```
 
 ## Services
@@ -162,7 +165,7 @@ In this section you will verify the ability to expose applications using a [Serv
 Expose the `nginx` deployment using a [NodePort](https://kubernetes.io/docs/concepts/services-networking/service/#nodeport) service:
 
 ```shell
-kubectl expose pod nginx --port 80 --type NodePort
+kubectl expose deployment nginx --port 80 --type NodePort
 ```
 
 > The LoadBalancer service type can not be used because your cluster is not configured with [cloud provider integration](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#azure). Setting up cloud provider integration is out of scope for this tutorial.
@@ -174,32 +177,21 @@ NODE_PORT=$(kubectl get svc nginx \
   --output=jsonpath='{range .spec.ports[0]}{.nodePort}')
 ```
 
-Create a firewall rule that allows remote access to the `nginx` node port:
+Retrieve the worker node assigned to nginx pod and then retreive external IP address of that worker instance from AZCLI:
 
 ```shell
-az network nsg rule create -g kubernetes \
-  -n kubernetes-allow-nginx \
-  --access allow \
-  --destination-address-prefix '*' \
-  --destination-port-range ${NODE_PORT} \
-  --direction inbound \
-  --nsg-name kubernetes-nsg \
-  --protocol tcp \
-  --source-address-prefix '*' \
-  --source-port-range '*' \
-  --priority 1002
+kubectl get pods -l app=nginx --output=jsonpath='{.items[*].spec.nodeName}'
 ```
 
-Retrieve the external IP address of a worker instance:
-
 ```shell
-EXTERNAL_IP=$(az network public-ip show -g kubernetes \
-  -n worker-0-pip --query "ipAddress" -otsv)
+az network public-ip show -g kubernetes \
+  -n worker-1-pip --query "ipAddress" -otsv
 ```
 
 Make an HTTP request using the external IP address and the `nginx` node port:
 
 ```shell
+EXTERNAL_IP=<-IP-fetched-from-above-cmd->
 curl -I http://$EXTERNAL_IP:$NODE_PORT
 ```
 
@@ -217,4 +209,4 @@ ETag: "5e26fe48-264"
 Accept-Ranges: bytes
 ```
 
-Next: [Dashboard Configuration](14-dashboard.md)
+Next: [Cleaning Up](14-cleanup.md)
