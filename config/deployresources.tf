@@ -57,7 +57,7 @@ resource "azurerm_lb" "lb" {
   sku                 = "standard"
 
   frontend_ip_configuration {
-    name                 = "${var.name}-pip"
+    name                 = "LoadBalancerFrontEnd"
     public_ip_address_id = azurerm_public_ip.pip.id
   }
 }
