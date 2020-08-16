@@ -100,6 +100,25 @@ resource "azurerm_public_ip" "worker" {
   sku                 = "standard"
 }
 
+resource "azurerm_network_security_group" "nsg" {
+  name                = "${var.name}-nsg"
+  location            = var.loc
+  resource_group_name = azurerm_resource_group.rg.name
+
+  security_rule {
+    name                       = "default-allow-ssh"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+}
+
 resource "azurerm_network_interface" "controller-nic" {
   count               = 2
   name                = "master-${count.index+1}-nic"
@@ -122,7 +141,13 @@ resource "azurerm_network_interface_backend_address_pool_association" "controlle
   network_interface_id    = azurerm_network_interface.controller-nic[count.index].id
   ip_configuration_name   = "master-${count.index+1}-nic"
   backend_address_pool_id = azurerm_lb_backend_address_pool.lb-pool.id
-} 
+}
+
+resource "azurerm_network_interface_security_group_association" "controller-nsg" {
+  count                     = 2
+  network_interface_id      = azurerm_network_interface.controller-nic[count.index].id
+  network_security_group_id = azurerm_network_security_group.nsg.id
+}
 
 resource "azurerm_network_interface" "worker-nic" {
   count               = 2
@@ -147,6 +172,12 @@ resource "azurerm_network_interface_backend_address_pool_association" "worker-ni
   network_interface_id    = azurerm_network_interface.worker-nic[count.index].id
   ip_configuration_name   = "worker-${count.index+1}-nic"
   backend_address_pool_id = azurerm_lb_backend_address_pool.lb-pool.id
+}
+
+resource "azurerm_network_interface_security_group_association" "worker-nsg" {
+  count                     = 2
+  network_interface_id      = azurerm_network_interface.worker-nic[count.index].id
+  network_security_group_id = azurerm_network_security_group.nsg.id
 }
 
 resource "azurerm_linux_virtual_machine" "controller-vm" {
