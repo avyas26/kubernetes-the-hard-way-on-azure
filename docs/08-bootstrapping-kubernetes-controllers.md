@@ -274,7 +274,7 @@ subjects:
     name: kube-apiserver
 EOF
 ```
-### If you have used [Terraform](Terraform.md#provisioning-azure-infrastructure-using-terraform) to provision the infra, skip the below steps and move to [Verification](08-bootstrapping-kubernetes-controllers.md#verification-1)
+### If you have used [Terraform](Terraform.md#provisioning-azure-infrastructure-using-terraform) to provision infra, skip the below steps and move to [Verification](08-bootstrapping-kubernetes-controllers.md#verification-1)
 
 ## The Kubernetes Frontend Load Balancer
 
