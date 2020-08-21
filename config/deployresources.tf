@@ -47,14 +47,14 @@ resource "azurerm_public_ip" "pip" {
   location            = var.loc
   resource_group_name = azurerm_resource_group.rg.name
   allocation_method   = "Static"
-  sku                 = "standard"
+  sku                 = "Basic"
 }
 
 resource "azurerm_lb" "lb" {
   name                = "${var.name}-lb"
   location            = var.loc
   resource_group_name = azurerm_resource_group.rg.name
-  sku                 = "standard"
+  sku                 = "Basic"
 
   frontend_ip_configuration {
     name                 = "LoadBalancerFrontEnd"
@@ -66,6 +66,26 @@ resource "azurerm_lb_backend_address_pool" "lb-pool" {
   resource_group_name = azurerm_resource_group.rg.name
   loadbalancer_id     = azurerm_lb.lb.id
   name                = "${var.name}-lb-pool"
+}
+
+resource "azurerm_lb_probe" "lb-probe" {
+  resource_group_name = azurerm_resource_group.rg.name
+  loadbalancer_id     = azurerm_lb.lb.id
+  name                = "kubernetes-apiserver-probe"
+  port                = 6443
+
+}
+
+resource "azurerm_lb_rule" "lb-rule" {
+  resource_group_name            = azurerm_resource_group.rg.name
+  loadbalancer_id                = azurerm_lb.lb.id
+  name                           = "kubernetes-apiserver-rule"
+  protocol                       = "Tcp"
+  frontend_port                  = 6443
+  backend_port                   = 6443
+  frontend_ip_configuration_name = "LoadBalancerFrontEnd"
+  backend_address_pool_id        = azurerm_lb_backend_address_pool.lb-pool.id
+  probe_id                       = azurerm_lb_probe.lb-probe.id
 }
 
 resource "azurerm_availability_set" "controller" {
@@ -88,7 +108,7 @@ resource "azurerm_public_ip" "controller" {
   resource_group_name = azurerm_resource_group.rg.name
   allocation_method   = "Static"
   location            = var.loc
-  sku                 = "standard"
+  sku                 = "Basic"
 }
 
 resource "azurerm_public_ip" "worker" {
@@ -97,7 +117,7 @@ resource "azurerm_public_ip" "worker" {
   resource_group_name = azurerm_resource_group.rg.name
   allocation_method   = "Static"
   location            = var.loc
-  sku                 = "standard"
+  sku                 = "Basic"
 }
 
 resource "azurerm_network_security_group" "nsg" {
@@ -106,6 +126,7 @@ resource "azurerm_network_security_group" "nsg" {
   resource_group_name = azurerm_resource_group.rg.name
 
   security_rule {
+
     name                       = "default-allow-ssh"
     priority                   = 100
     direction                  = "Inbound"
@@ -116,8 +137,20 @@ resource "azurerm_network_security_group" "nsg" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+security_rule {
+    name                       = "default-allow-apiserver"
+    priority                   = 110
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "6443"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
 
-}
+  }
+
+ }
 
 resource "azurerm_network_interface" "controller-nic" {
   count               = 2
@@ -164,14 +197,6 @@ resource "azurerm_network_interface" "worker-nic" {
     public_ip_address_id          = azurerm_public_ip.worker[count.index].id
     
   }
-}
-
-
-resource "azurerm_network_interface_backend_address_pool_association" "worker-nic-backend" {
-  count                   = 2
-  network_interface_id    = azurerm_network_interface.worker-nic[count.index].id
-  ip_configuration_name   = "worker-${count.index+1}-nic"
-  backend_address_pool_id = azurerm_lb_backend_address_pool.lb-pool.id
 }
 
 resource "azurerm_network_interface_security_group_association" "worker-nsg" {
