@@ -38,6 +38,57 @@ wget https://raw.githubusercontent.com/vyasanand/kubernetes-the-hard-way-on-azur
 ls
 deployresources.tf
 ```
+Run the below command to verify the Azure account.
+
+```shell
+az account list
+```
+> Output
+
+```shell
+[
+  {
+    "cloudName": "AzureCloud",
+    "homeTenantId": "abc123-abc123-abc12345-abc12345",
+    "id": "abc123-abc123-abc12345-abc12345",
+    "isDefault": true,
+    "managedByTenants": [],
+    "name": "<Your-Account-Name>",
+    "state": "Enabled",
+    "tenantId": "abc123-abc123-abc12345-abc12345",
+    "user": {
+      "name": "<your-email-ID>",
+      "type": "user"
+    }
+  }
+]
+
+```
+Run the below command to initilize Terraform.
+
+```shell
+terraform.exe init
+```
+> Output
+
+```shell
+Initializing the backend...
+
+Initializing provider plugins...
+- Checking for available provider plugins...
+- Downloading plugin for provider "azurerm" (hashicorp/azurerm) 2.21.0...
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+
+```
 
 Run the below command to validate the plan. Change the loc variable to deploy to another location.
 
