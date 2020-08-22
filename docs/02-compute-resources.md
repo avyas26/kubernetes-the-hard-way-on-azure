@@ -165,16 +165,16 @@ SSH to the instances:
 ```shell
 for i in 1 2; \
 do \
-az vm show -d -g kubernetes --name master-$i --query publicIps -o tsv | tr -d [:space:] >> ips.txt; \
-echo " " >> ips.txt ;\
-az vm show -d -g kubernetes --name worker-$i --query publicIps -o tsv | tr -d [:space:] >> ips.txt; \
-echo " " >> ips.txt; \
+az vm show -d -g kubernetes --name master-$i --query publicIps -o tsv | tr -d [:space:] >> ~/ips.txt; \
+echo " " >> ~/ips.txt ;\
+az vm show -d -g kubernetes --name worker-$i --query publicIps -o tsv | tr -d [:space:] >> ~/ips.txt; \
+echo " " >> ~/ips.txt; \
 done
 ```
 > Login to server
 
 ```shell
-for ip in `cat ips.txt`; \
+for ip in `cat ~/ips.txt`; \
 do \
 ssh kubeadmin@$ip "hostname -s" ;\
 done

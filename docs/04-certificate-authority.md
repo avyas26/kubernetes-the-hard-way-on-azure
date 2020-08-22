@@ -139,7 +139,7 @@ openssl genrsa -out kube-proxy.key 2048
 openssl req -new -key kube-proxy.key -subj "/CN=system:kube-proxy" -out kube-proxy.csr
 openssl x509 -req -in kube-proxy.csr -CA ca.crt -CAkey ca.key -CAcreateserial  -out kube-proxy.crt -days 1000
 }
-
+```
 > Output:
 
 ```shell
@@ -157,7 +157,7 @@ openssl genrsa -out kube-scheduler.key 2048
 openssl req -new -key kube-scheduler.key -subj "/CN=system:kube-scheduler" -out kube-scheduler.csr
 openssl x509 -req -in kube-scheduler.csr -CA ca.crt -CAkey ca.key -CAcreateserial  -out kube-scheduler.crt -days 1000
 }
-
+```
 > Output:
 
 ```shell
@@ -251,7 +251,7 @@ do \
 ssh-copy-id ${srv}; \
 done
 ```
-> Validate the connectivity once done
+> Enter ```yes``` and ```password``` to share the keys. Validate the connectivity once done
 
 ```shell
 for srv in master-2 worker-1 worker-2; \

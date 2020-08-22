@@ -30,6 +30,8 @@ az version
 ```
 NOTE: If you face issues in launching the Azure CLI, check for PATH environment variable. It should have the CLI path set.
       For example: ``` export PATH="$PATH:/drives/c/Program Files (x86)/Microsoft SDKs/Azure/CLI2/wbin" ```
+      
+### [Optional] If you wish, you can skip the manual infrastructure provision and use terraform configuration file to build it automatically for you. Go to [Provisioning Azure infrastructure using Terraform](Terraform.md#provisioning-azure-infrastructure-using-terraform) section.
 
 ### Create a default Resource Group in a location
 
