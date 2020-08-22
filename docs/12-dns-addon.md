@@ -7,7 +7,7 @@ In this lab you will deploy the [DNS add-on](https://kubernetes.io/docs/concepts
 Deploy the `coredns` cluster add-on on ```master-1``` node:
 
 ```
-wget https://raw.githubusercontent.com/vyasanand/kubernetes-the-hard-way-on-azure/config/coredns.yaml
+wget https://raw.githubusercontent.com/vyasanand/kubernetes-the-hard-way-on-azure/master/config/coredns.yaml
 
 ```
 
