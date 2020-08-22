@@ -64,7 +64,7 @@ az account list
 ]
 
 ```
-Run the below command to initilize Terraform.
+Run the below command to initialize Terraform.
 
 ```shell
 terraform.exe init
