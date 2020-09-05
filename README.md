@@ -29,6 +29,7 @@ Kubernetes The Hard Way guides you through bootstrapping a highly available Kube
 This tutorial assumes you have access to the [Microsoft Azure](https://azure.microsoft.com). While Azure is used for basic infrastructure requirements the lessons learned in this tutorial can be applied to other platforms.
 
 * [Prerequisites](docs/01-prerequisites.md)
+* [Provisioning Azure infrastructure using Terraform (Optional)](docs/Terraform.md)
 * [Provisioning Compute Resources](docs/02-compute-resources.md)
 * [Installing the Client Tools](docs/03-client-tools.md)
 * [Provisioning the CA and Generating TLS Certificates](docs/04-certificate-authority.md)
