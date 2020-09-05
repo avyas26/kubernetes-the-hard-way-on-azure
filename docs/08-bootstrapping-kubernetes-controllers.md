@@ -162,7 +162,7 @@ Create the `kube-scheduler.yaml` configuration file:
 
 ```shell
 cat <<EOF | sudo tee /etc/kubernetes/config/kube-scheduler.yaml
-apiVersion: kubescheduler.config.k8s.io/v1alpha1
+apiVersion: kubescheduler.config.k8s.io/v1beta1
 kind: KubeSchedulerConfiguration
 clientConnection:
   kubeconfig: "/var/lib/kubernetes/kube-scheduler.kubeconfig"
@@ -313,13 +313,13 @@ curl --cacert /var/lib/kubernetes/ca.crt https://$PIADDR:6443/version
 
 ```shell
 {
-  "major": "1",
-  "minor": "18",
-  "gitVersion": "v1.18.6",
-  "gitCommit": "dff82dc0de47299ab66c83c626e08b245ab19037",
+   "major": "1",
+  "minor": "19",
+  "gitVersion": "v1.19.0",
+  "gitCommit": "e19964183377d0ec2052d1f1fa930c4d7575bd50",
   "gitTreeState": "clean",
-  "buildDate": "2020-07-15T16:51:04Z",
-  "goVersion": "go1.13.9",
+  "buildDate": "2020-08-26T14:23:04Z",
+  "goVersion": "go1.15",
   "compiler": "gc",
   "platform": "linux/amd64"
 }

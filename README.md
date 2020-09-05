@@ -19,7 +19,7 @@ The target audience for this tutorial is someone planning to support a productio
 
 Kubernetes The Hard Way guides you through bootstrapping a highly available Kubernetes cluster with end-to-end encryption between components and RBAC authentication.
 
-* [Kubernetes](https://github.com/kubernetes/kubernetes) 1.17.3
+* [Kubernetes](https://github.com/kubernetes/kubernetes) 1.19.0
 * [Docker-CE](https://kubernetes.io/docs/setup/production-environment/container-runtimes/) 19.03.11
 * [etcd](https://github.com/etcd-io/etcd/releases/tag/v3.4.9) v3.4.9
 * [CoreDNS](https://coredns.io/)
@@ -29,6 +29,7 @@ Kubernetes The Hard Way guides you through bootstrapping a highly available Kube
 This tutorial assumes you have access to the [Microsoft Azure](https://azure.microsoft.com). While Azure is used for basic infrastructure requirements the lessons learned in this tutorial can be applied to other platforms.
 
 * [Prerequisites](docs/01-prerequisites.md)
+* [Provisioning Azure infrastructure using Terraform (Optional)](docs/Terraform.md)
 * [Provisioning Compute Resources](docs/02-compute-resources.md)
 * [Installing the Client Tools](docs/03-client-tools.md)
 * [Provisioning the CA and Generating TLS Certificates](docs/04-certificate-authority.md)
@@ -41,4 +42,5 @@ This tutorial assumes you have access to the [Microsoft Azure](https://azure.mic
 * [Deploy Pod Networking Solution](docs/11-Deploy-networking-solution.md)
 * [Deploying the DNS Cluster Add-on](docs/12-dns-addon.md)
 * [Smoke Test](docs/13-smoke-test.md)
+* [Kubernetes Dashboard (Optional)](docs/Dashboard.md)
 * [Cleaning Up](docs/14-cleanup.md)
