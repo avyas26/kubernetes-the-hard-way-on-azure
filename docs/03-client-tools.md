@@ -45,7 +45,7 @@ kubectl version --client
 > output
 
 ```shell
-Client Version: version.Info{Major:"1", Minor:"18", GitVersion:"v1.18.6", GitCommit:"dff82dc0de47299ab66c83c626e08b245ab19037", GitTreeState:"clean", BuildDate:"2020-07-15T16:58:53Z", GoVersion:"go1.13.9", Compiler:"gc", Platform:"linux/amd64"}
+Client Version: version.Info{Major:"1", Minor:"19", GitVersion:"v1.19.0", GitCommit:"e19964183377d0ec2052d1f1fa930c4d7575bd50", GitTreeState:"clean", BuildDate:"2020-08-26T14:30:33Z", GoVersion:"go1.15", Compiler:"gc", Platform:"linux/amd64"}
 ```
 
 To quick check kubectl version, you can also use the following command : 
@@ -57,7 +57,7 @@ kubectl version --short
 > output
 
 ```shell
-Client Version: v1.18.6
+Client Version: v1.19.0
 The connection to the server localhost:8080 was refused - did you specify the right host or port?
 ```
 
