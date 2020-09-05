@@ -189,9 +189,6 @@ Install the worker binaries:
 
 > Remember to run the below commands on each worker node: `worker-1` and `worker-2`.
 
-```shell
-POD_CIDR="$(echo $(curl --silent -H Metadata:true "http://169.254.169.254/metadata/instance/compute/tags?api-version=2019-06-01&format=text") | cut -d : -f2)"
-```
 Create the `kubelet-config.yaml` configuration file:
 
 ```shell
@@ -335,8 +332,8 @@ kubectl get nodes
 
 ```shell
 NAME       STATUS     ROLES    AGE   VERSION
-worker-1   NotReady   <none>   61s   v1.18.6
-worker-2   NotReady   <none>   9s    v1.18.6
+worker-1   NotReady   <none>   6s    v1.19.0
+worker-2   NotReady   <none>   9s    v1.19.0
 ```
 
 Next: [Configuring kubectl for Remote Access](10-configuring-kubectl.md)
